@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sales Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f0d0a;
+    --surface: #1a1713;
+    --surface2: #231f19;
+    --border: #2e2820;
+    --amber: #e8a020;
+    --amber-light: #f5c060;
+    --amber-dim: #7a5010;
+    --cream: #f0e8d8;
+    --muted: #8a7d6a;
+    --green: #4caf7d;
+    --red: #e05555;
+    --foam: #fdf6ec;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--cream);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* Grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.4;
+  }
+
+  header {
+    background: linear-gradient(180deg, #1a1410 0%, var(--bg) 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 28px 40px 24px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .logo-area h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.8rem;
+    letter-spacing: 0.08em;
+    color: var(--amber);
+    line-height: 1;
+    text-shadow: 0 0 40px rgba(232,160,32,0.3);
+  }
+
+  .logo-area p {
+    font-size: 0.78rem;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .header-meta {
+    text-align: right;
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  /* Tabs */
+  .tab-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+    display: flex;
+    gap: 0;
+  }
+
+  .tab {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 16px 24px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+  }
+
+  .tab:hover { color: var(--cream); }
+  .tab.active { color: var(--amber); border-bottom-color: var(--amber); }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Main layout */
+  main { padding: 36px 40px; max-width: 1400px; margin: 0 auto; }
+
+  /* KPI Cards */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 36px;
+  }
+
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--amber);
+    opacity: 0.6;
+  }
+
+  .kpi-card:hover { border-color: var(--amber-dim); }
+
+  .kpi-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .kpi-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.4rem;
+    letter-spacing: 0.04em;
+    color: var(--amber-light);
+    line-height: 1;
+  }
+
+  .kpi-sub {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 6px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* Charts grid */
+  .charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+
+  .charts-row.three { grid-template-columns: 1fr 1fr 1fr; }
+  .charts-row.wide { grid-template-columns: 2fr 1fr; }
+
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 24px;
+  }
+
+  .chart-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.15rem;
+    letter-spacing: 0.1em;
+    color: var(--amber);
+    margin-bottom: 4px;
+  }
+
+  .chart-sub {
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+
+  .chart-wrap { position: relative; }
+
+  /* Table */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.83rem;
+  }
+
+  .data-table th {
+    text-align: left;
+    font-size: 0.68rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 500;
+  }
+
+  .data-table th.right, .data-table td.right { text-align: right; }
+
+  .data-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(46,40,32,0.5);
+    font-family: 'DM Sans', sans-serif;
+    color: var(--cream);
+  }
+
+  .data-table tr:hover td { background: rgba(232,160,32,0.04); }
+
+  .data-table td.mono {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+  }
+
+  .rank {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    color: var(--amber-dim);
+    width: 32px;
+  }
+
+  .rank.top { color: var(--amber); }
+
+  .badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 2px;
+    background: rgba(232,160,32,0.12);
+    color: var(--amber);
+    border: 1px solid rgba(232,160,32,0.2);
+  }
+
+  .badge.green { background: rgba(76,175,125,0.12); color: var(--green); border-color: rgba(76,175,125,0.2); }
+  .badge.blue { background: rgba(80,140,200,0.12); color: #80b4e8; border-color: rgba(80,140,200,0.2); }
+
+  /* Bar mini */
+  .mini-bar-wrap { display: flex; align-items: center; gap: 8px; }
+  .mini-bar-bg { flex: 1; height: 4px; background: var(--border); border-radius: 2px; }
+  .mini-bar-fill { height: 4px; background: var(--amber); border-radius: 2px; opacity: 0.7; transition: width 0.6s ease; }
+
+  /* Section header */
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 16px;
+    margin-top: 32px;
+  }
+
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.4rem;
+    letter-spacing: 0.1em;
+    color: var(--amber);
+  }
+
+  .section-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Comparison card */
+  .compare-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 24px;
+    align-items: center;
+    margin-top: 20px;
+  }
+
+  .compare-metric { text-align: center; }
+  .compare-metric .label {
+    font-size: 0.68rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .compare-metric .val {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 0.04em;
+  }
+
+  .compare-metric .val.bad { color: var(--red); }
+  .compare-metric .val.good { color: var(--green); }
+  .compare-metric .val.neutral { color: var(--amber-light); }
+
+  .compare-divider {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .compare-divider .arrow {
+    font-size: 1.5rem;
+    color: var(--muted);
+  }
+
+  .compare-divider .pct {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.85rem;
+    padding: 4px 10px;
+    border-radius: 3px;
+  }
+
+  .compare-divider .pct.bad { background: rgba(224,85,85,0.12); color: var(--red); }
+  .compare-divider .pct.good { background: rgba(76,175,125,0.12); color: var(--green); }
+  .compare-divider .pct.neutral { background: rgba(232,160,32,0.12); color: var(--amber); }
+
+  .col-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-align: center;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+
+  /* Note box */
+  .note-box {
+    background: rgba(232,160,32,0.06);
+    border: 1px solid rgba(232,160,32,0.18);
+    border-left: 3px solid var(--amber);
+    border-radius: 3px;
+    padding: 14px 18px;
+    font-size: 0.82rem;
+    color: var(--cream);
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+
+  .note-box strong { color: var(--amber); }
+
+  /* Donut legend */
+  .donut-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 16px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.78rem;
+    color: var(--cream);
+  }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .legend-pct {
+    margin-left: auto;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  @media (max-width: 900px) {
+    main { padding: 20px; }
+    header { padding: 20px; }
+    .tab-bar { padding: 0 20px; }
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+    .charts-row { grid-template-columns: 1fr; }
+    .charts-row.wide { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-area">
+    <h1>Sales Dashboard</h1>
+    <p>All-Time Performance Overview</p>
+  </div>
+  <div class="header-meta">
+    Total Revenue<br>
+    <span style="font-family:'Bebas Neue';font-size:1.6rem;color:var(--amber);letter-spacing:0.06em;">$3,290,750</span>
+  </div>
+</header>
+
+<div class="tab-bar">
+  <button class="tab active" onclick="showTab('overview')">Overview</button>
+  <button class="tab" onclick="showTab('beverages')">Beverages</button>
+  <button class="tab" onclick="showTab('food')">Food</button>
+  <button class="tab" onclick="showTab('items')">Top Items</button>
+  <button class="tab" onclick="showTab('comparison')">YoY Comparison</button>
+</div>
+
+<!-- OVERVIEW TAB -->
+<div id="tab-overview" class="tab-content active">
+<main>
+
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Total Net Sales</div>
+      <div class="kpi-value">$3.29M</div>
+      <div class="kpi-sub">$3,290,749.75 lifetime</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Items Sold</div>
+      <div class="kpi-value">395K</div>
+      <div class="kpi-sub">395,130 total items</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Avg Item Price</div>
+      <div class="kpi-value">$8.82</div>
+      <div class="kpi-sub">Across all categories</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Discount Given</div>
+      <div class="kpi-value">$193K</div>
+      <div class="kpi-sub">5.6% of gross sales</div>
+    </div>
+  </div>
+
+  <div class="charts-row wide">
+    <div class="chart-card">
+      <div class="chart-title">Revenue by Category</div>
+      <div class="chart-sub">Net sales — all categories</div>
+      <div class="chart-wrap"><canvas id="catBarChart" height="280"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Bev vs Food Split</div>
+      <div class="chart-sub">Net revenue breakdown</div>
+      <div class="chart-wrap" style="max-width:220px;margin:0 auto;"><canvas id="splitDonut" height="200"></canvas></div>
+      <div class="donut-legend" id="splitLegend"></div>
+    </div>
+  </div>
+
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-title">Volume Leaders</div>
+      <div class="chart-sub">Top 10 by items sold</div>
+      <div class="chart-wrap"><canvas id="volumeBar" height="240"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Revenue Leaders</div>
+      <div class="chart-sub">Top 10 by net amount</div>
+      <div class="chart-wrap"><canvas id="revenueBar" height="240"></canvas></div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<!-- BEVERAGES TAB -->
+<div id="tab-beverages" class="tab-content">
+<main>
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Draft Beer Revenue</div>
+      <div class="kpi-value">$699K</div>
+      <div class="kpi-sub">21.2% of total revenue</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Liquor Revenue</div>
+      <div class="kpi-value">$623K</div>
+      <div class="kpi-sub">18.9% of total revenue</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Bottle Beer Revenue</div>
+      <div class="kpi-value">$98.5K</div>
+      <div class="kpi-sub">3.0% of total revenue</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Wine + N/A Revenue</div>
+      <div class="kpi-value">$132K</div>
+      <div class="kpi-sub">4.0% of total revenue</div>
+    </div>
+  </div>
+
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-title">Draft Beer — Top Taps</div>
+      <div class="chart-sub">By items sold</div>
+      <div class="chart-wrap"><canvas id="draftBar" height="260"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Liquor — Top Pours</div>
+      <div class="chart-sub">By net revenue</div>
+      <div class="chart-wrap"><canvas id="liquorBar" height="260"></canvas></div>
+    </div>
+  </div>
+
+  <div class="section-header">
+    <div class="section-title">Beverage Detail</div>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="chart-card">
+    <table class="data-table" id="bevTable"></table>
+  </div>
+
+</main>
+</div>
+
+<!-- FOOD TAB -->
+<div id="tab-food" class="tab-content">
+<main>
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Wings Revenue</div>
+      <div class="kpi-value">$308K</div>
+      <div class="kpi-sub">9.4% of total — #1 food cat</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Burgers Revenue</div>
+      <div class="kpi-value">$224K</div>
+      <div class="kpi-sub">6.8% of total</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Shareables Revenue</div>
+      <div class="kpi-value">$367K</div>
+      <div class="kpi-sub">11.1% of total — top food</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Sandwiches Revenue</div>
+      <div class="kpi-value">$219K</div>
+      <div class="kpi-sub">6.7% of total</div>
+    </div>
+  </div>
+
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-title">Food Category Revenue</div>
+      <div class="chart-sub">Net sales by food category</div>
+      <div class="chart-wrap"><canvas id="foodCatBar" height="260"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Wings Breakdown</div>
+      <div class="chart-sub">Top wing items by quantity</div>
+      <div class="chart-wrap"><canvas id="wingsBar" height="260"></canvas></div>
+    </div>
+  </div>
+
+  <div class="section-header">
+    <div class="section-title">Food Item Detail</div>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="chart-card">
+    <table class="data-table" id="foodTable"></table>
+  </div>
+</main>
+</div>
+
+<!-- TOP ITEMS TAB -->
+<div id="tab-items" class="tab-content">
+<main>
+  <div class="note-box">
+    <strong>Reading this table:</strong> Items are sorted by revenue. The top items span beverages and food — your highest volume movers are draft beers, while your highest revenue per item are food and cocktails.
+  </div>
+
+  <div class="chart-card">
+    <table class="data-table" id="topItemsTable"></table>
+  </div>
+</main>
+</div>
+
+<!-- YoY COMPARISON TAB -->
+<div id="tab-comparison" class="tab-content">
+<main>
+
+  <div class="note-box">
+    <strong>Context matters:</strong> June 2024 was your grand opening — expect inflated numbers from the honeymoon rush. Your settled baseline is Aug–Oct 2024. The comparison below shows the raw YoY delta, which overstates the "decline." Upload monthly data to see true trend lines.
+  </div>
+
+  <div class="compare-card">
+    <div class="chart-title">June 2024 vs June 2025</div>
+    <div class="chart-sub">Year-over-year snapshot — opening month vs. anniversary month</div>
+
+    <div class="compare-grid">
+      <div>
+        <div class="col-label">Jun 2024 (Opening)</div>
+        <div class="compare-metric">
+          <div class="label">Net Sales</div>
+          <div class="val neutral">$295,191</div>
+        </div>
+        <div class="compare-metric" style="margin-top:16px">
+          <div class="label">Orders</div>
+          <div class="val neutral">6,572</div>
+        </div>
+        <div class="compare-metric" style="margin-top:16px">
+          <div class="label">Guests</div>
+          <div class="val neutral">12,702</div>
+        </div>
+        <div class="compare-metric" style="margin-top:16px">
+          <div class="label">Avg Order Value</div>
+          <div class="val neutral">$44.92</div>
+        </div>
+      </div>
+
+      <div class="compare-divider" style="flex-direction:column;gap:20px;">
+        <div style="text-align:center;">
+          <div class="pct bad">−46.0%</div>
+          <div style="font-size:0.65rem;color:var(--muted);margin-top:4px;letter-spacing:0.1em;text-transform:uppercase;">Net Sales</div>
+        </div>
+        <div style="text-align:center;">
+          <div class="pct bad">−45.7%</div>
+          <div style="font-size:0.65rem;color:var(--muted);margin-top:4px;letter-spacing:0.1em;text-transform:uppercase;">Orders</div>
+        </div>
+        <div style="text-align:center;">
+          <div class="pct bad">−45.9%</div>
+          <div style="font-size:0.65rem;color:var(--muted);margin-top:4px;letter-spacing:0.1em;text-transform:uppercase;">Guests</div>
+        </div>
+        <div style="text-align:center;">
+          <div class="pct neutral">−0.65%</div>
+          <div style="font-size:0.65rem;color:var(--muted);margin-top:4px;letter-spacing:0.1em;text-transform:uppercase;">AOV</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="col-label">Jun 2025 (Steady State)</div>
+        <div class="compare-metric">
+          <div class="label">Net Sales</div>
+          <div class="val good">$159,357</div>
+        </div>
+        <div class="compare-metric" style="margin-top:16px">
+          <div class="label">Orders</div>
+          <div class="val good">3,571</div>
+        </div>
+        <div class="compare-metric" style="margin-top:16px">
+          <div class="label">Guests</div>
+          <div class="val good">6,878</div>
+        </div>
+        <div class="compare-metric" style="margin-top:16px">
+          <div class="label">Avg Order Value</div>
+          <div class="val good">$44.63</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">What This Actually Means</div>
+    <div class="chart-sub">Key takeaways from the comparison</div>
+    <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:16px;">
+        <div style="font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--green);margin-bottom:8px;">✓ Stable Signal</div>
+        <div style="font-size:0.84rem;line-height:1.6;color:var(--cream);">Average Order Value held almost perfectly flat at ~$44.65. Your regulars spend the same — the opening crowd just inflated volume.</div>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:16px;">
+        <div style="font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--amber);margin-bottom:8px;">⚡ Volume Story</div>
+        <div style="font-size:0.84rem;line-height:1.6;color:var(--cream);">The ~46% drops are uniform across sales, orders, and guests — this points to fewer visitors, not a menu or pricing problem.</div>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:16px;">
+        <div style="font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--amber);margin-bottom:8px;">📊 Next Step</div>
+        <div style="font-size:0.84rem;line-height:1.6;color:var(--cream);">Compare Jun 2025 to Aug–Oct 2024 settled baseline. That will show if you're growing, flat, or declining from your true run rate.</div>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:16px;">
+        <div style="font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--green);margin-bottom:8px;">✓ Healthy Sign</div>
+        <div style="font-size:0.84rem;line-height:1.6;color:var(--cream);">$159K in a single month at ~$44 AOV represents solid throughput. Lifetime revenue at $3.29M is a strong first-year base.</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<script>
+// ─── Data ───────────────────────────────────────────────────
+const categories = [
+  { name: 'Draft Beer', net: 699281.83, qty: 123335, avgPrice: 5.87 },
+  { name: 'Liquor', net: 623154.91, qty: 69937, avgPrice: 9.46 },
+  { name: 'Shareables', net: 366613.71, qty: 34661, avgPrice: 11.13 },
+  { name: 'Wings', net: 307955.24, qty: 20492, avgPrice: 15.78 },
+  { name: 'Bottle Beer', net: 98542.80, qty: 18903, avgPrice: 5.42 },
+  { name: 'N/A Beverage', net: 57867.28, qty: 17378, avgPrice: 3.41 },
+  { name: 'Sandwiches', net: 218889.34, qty: 16728, avgPrice: 14.13 },
+  { name: 'Burgers', net: 223782.05, qty: 16655, avgPrice: 14.35 },
+  { name: 'Baskets', net: 181347.95, qty: 12670, avgPrice: 15.30 },
+  { name: 'Sides', net: 40082.10, qty: 11014, avgPrice: 3.96 },
+  { name: 'Pizza', net: 139616.00, qty: 10628, avgPrice: 14.53 },
+  { name: 'Add-ons', net: 6853.93, qty: 10054, avgPrice: 0.74 },
+  { name: 'Tacos', net: 102111.02, qty: 8725, avgPrice: 12.72 },
+  { name: 'Wine', net: 74214.70, qty: 8317, avgPrice: 9.24 },
+  { name: 'Salads', net: 85834.41, qty: 7275, avgPrice: 12.70 },
+  { name: 'Desserts', net: 16471.01, qty: 1970, avgPrice: 9.59 },
+  { name: 'Breakfast', net: 13497.12, qty: 1230, avgPrice: 12.12 },
+];
+
+const topItems = [
+  { name: 'Creature Comforts Tropicalia', cat: 'Draft Beer', qty: 8587, net: 49395, price: 5.94 },
+  { name: 'Michelob Ultra', cat: 'Draft Beer', qty: 8225, net: 37676, price: 4.73 },
+  { name: 'All American Pub Burger 6oz', cat: 'Burgers', qty: 8011, net: 108130, price: 14.55 },
+  { name: 'Wing Basket', cat: 'Wings', qty: 6652, net: 99988, price: 15.99 },
+  { name: 'Titos Vodka', cat: 'Liquor', qty: 6685, net: 53578, price: 8.32 },
+  { name: '10 Chicken Wings', cat: 'Wings', qty: 5982, net: 94073, price: 16.55 },
+  { name: 'Chicken Tenders', cat: 'Baskets', qty: 4684, net: 63483, price: 14.65 },
+  { name: 'Miller Lite', cat: 'Draft Beer', qty: 4479, net: 19928, price: 4.64 },
+  { name: 'Sierra Nevada Hazy Little Thing', cat: 'Draft Beer', qty: 4452, net: 20986, price: 4.93 },
+  { name: 'Guinness Draught', cat: 'Draft Beer', qty: 4414, net: 28584, price: 6.68 },
+  { name: 'Bud Light Btl', cat: 'Bottle Beer', qty: 4177, net: 16458, price: 4.00 },
+  { name: 'Coke', cat: 'N/A Bev', qty: 4131, net: 14305, price: 3.50 },
+  { name: 'Crispy Chicken Sandwich', cat: 'Sandwiches', qty: 3816, net: 50359, price: 14.26 },
+  { name: 'Pretzels', cat: 'Shareables', qty: 3729, net: 31415, price: 9.16 },
+  { name: 'Hot Honey Pepperoni Pizza', cat: 'Pizza', qty: 3696, net: 50183, price: 14.43 },
+  { name: 'Tap Out Margarita', cat: 'Liquor', qty: 3704, net: 31548, price: 8.86 },
+  { name: 'Jameson Irish Whiskey', cat: 'Liquor', qty: 3932, net: 29313, price: 8.27 },
+  { name: 'Fish & Chips', cat: 'Baskets', qty: 3051, net: 47885, price: 16.32 },
+  { name: 'Caesar Salad w Chicken', cat: 'Salads', qty: 2810, net: 30588, price: 11.70 },
+  { name: 'Brisket Grilled Cheese', cat: 'Sandwiches', qty: 2803, net: 37562, price: 14.69 },
+];
+
+const draftBeers = [
+  { name: 'Creature Comforts Tropicalia', qty: 8587, net: 49395 },
+  { name: 'Michelob Ultra', qty: 8225, net: 37676 },
+  { name: 'Miller Lite', qty: 4479, net: 19928 },
+  { name: 'Sierra Nevada Hazy', qty: 4452, net: 20986 },
+  { name: 'Guinness Draught', qty: 4414, net: 28584 },
+  { name: 'Yuengling Lager', qty: 3645, net: 16202 },
+  { name: 'Monday Night Taco Tue.', qty: 2553, net: 13447 },
+  { name: 'Stella Artois', qty: 2545, net: 14397 },
+  { name: 'Modelo Especial', qty: 2486, net: 13823 },
+  { name: 'Cigar City Jai Alai', qty: 3185, net: 20721 },
+];
+
+const liquors = [
+  { name: 'Titos Vodka', qty: 6685, net: 53578 },
+  { name: 'Tap Out Margarita', qty: 3704, net: 31548 },
+  { name: 'Jameson Irish Whiskey', qty: 3932, net: 29313 },
+  { name: 'Lunazul Blanco Tequila', qty: 2874, net: 16140 },
+  { name: 'Jack Daniels Whiskey', qty: 1971, net: 13424 },
+  { name: 'Spicy Rita Cocktail', qty: 1523, net: 14337 },
+  { name: 'Texas Mule', qty: 1514, net: 13681 },
+  { name: 'Raspberry Lemon Drop', qty: 1431, net: 16128 },
+  { name: 'Smoked Old Fashioned', qty: 1237, net: 16677 },
+  { name: 'Espresso Martini', qty: 1259, net: 15557 },
+];
+
+const foodCats = [
+  { name: 'Shareables', net: 366614 },
+  { name: 'Wings', net: 307955 },
+  { name: 'Burgers', net: 223782 },
+  { name: 'Sandwiches', net: 218890 },
+  { name: 'Baskets', net: 181348 },
+  { name: 'Pizza', net: 139616 },
+  { name: 'Tacos', net: 102111 },
+  { name: 'Salads', net: 85834 },
+  { name: 'Sides', net: 40082 },
+  { name: 'Desserts', net: 16471 },
+];
+
+const wings = [
+  { name: 'Wing Basket', qty: 6652 },
+  { name: '10 Chicken Wings', qty: 5982 },
+  { name: '6 Chicken Wings', qty: 3198 },
+  { name: '15 Chicken Wings', qty: 1889 },
+  { name: 'Wing Basket (Lunch)', qty: 1113 },
+];
+
+// ─── Chart defaults ───────────────────────────────────────
+Chart.defaults.color = '#8a7d6a';
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+
+const amber = '#e8a020';
+const amberLight = '#f5c060';
+const amberDim = 'rgba(232,160,32,0.15)';
+const green = '#4caf7d';
+
+function makeHbar(id, labels, data, color='#e8a020') {
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ data, backgroundColor: color, borderRadius: 2, borderSkipped: false }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: {
+        backgroundColor: '#1a1713',
+        borderColor: '#2e2820',
+        borderWidth: 1,
+        titleColor: '#f5c060',
+        bodyColor: '#f0e8d8',
+        callbacks: { label: ctx => ' ' + ctx.formattedValue }
+      }},
+      scales: {
+        x: { grid: { color: 'rgba(46,40,32,0.6)' }, ticks: { color: '#8a7d6a' } },
+        y: { grid: { display: false }, ticks: { color: '#c8b898', font: { size: 11 } } }
+      }
+    }
+  });
+}
+
+function makeVbar(id, labels, data, color='#e8a020') {
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ data, backgroundColor: color, borderRadius: 2 }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: {
+        backgroundColor: '#1a1713',
+        borderColor: '#2e2820',
+        borderWidth: 1,
+        titleColor: '#f5c060',
+        bodyColor: '#f0e8d8',
+      }},
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#8a7d6a', font: { size: 10 }, maxRotation: 35 } },
+        y: { grid: { color: 'rgba(46,40,32,0.6)' }, ticks: { color: '#8a7d6a' } }
+      }
+    }
+  });
+}
+
+// ─── Overview charts ─────────────────────────────────────
+const sorted = [...categories].sort((a,b) => b.net - a.net).slice(0, 12);
+makeHbar('catBarChart',
+  sorted.map(c => c.name),
+  sorted.map(c => c.net),
+  sorted.map((c, i) => i < 3 ? amberLight : i < 6 ? amber : 'rgba(232,160,32,0.45)')
+);
+
+// Bev vs Food donut
+const bevNet = 699282 + 623155 + 98543 + 74215 + 57867;
+const foodNet = 366614 + 307955 + 223782 + 218890 + 181348 + 139616 + 102111 + 85834 + 40082 + 16471 + 13497;
+const total = bevNet + foodNet;
+
+const donutColors = ['#e8a020', '#c87010', '#4caf7d', '#6080c0'];
+const donutLabels = ['Draft Beer', 'Liquor', 'Food', 'Other Bev'];
+const donutData = [699282, 623155, foodNet, 98543+74215+57867];
+
+const splitCtx = document.getElementById('splitDonut');
+if (splitCtx) {
+  new Chart(splitCtx, {
+    type: 'doughnut',
+    data: {
+      labels: donutLabels,
+      datasets: [{ data: donutData, backgroundColor: donutColors, borderColor: '#0f0d0a', borderWidth: 3, hoverOffset: 6 }]
+    },
+    options: {
+      cutout: '65%',
+      plugins: { legend: { display: false }, tooltip: {
+        backgroundColor: '#1a1713', borderColor: '#2e2820', borderWidth: 1,
+        titleColor: '#f5c060', bodyColor: '#f0e8d8',
+        callbacks: { label: ctx => ' $' + Math.round(ctx.parsed).toLocaleString() }
+      }}
+    }
+  });
+}
+
+const legendEl = document.getElementById('splitLegend');
+if (legendEl) {
+  donutLabels.forEach((l, i) => {
+    const pct = ((donutData[i] / donutData.reduce((a,b)=>a+b,0))*100).toFixed(1);
+    legendEl.innerHTML += `<div class="legend-item"><div class="legend-dot" style="background:${donutColors[i]}"></div><span>${l}</span><span class="legend-pct">${pct}%</span></div>`;
+  });
+}
+
+// Volume & Revenue leaders
+const topByQty = [...topItems].sort((a,b) => b.qty - a.qty).slice(0, 10);
+const topByNet = [...topItems].sort((a,b) => b.net - a.net).slice(0, 10);
+
+makeHbar('volumeBar', topByQty.map(i => i.name.length > 22 ? i.name.slice(0,22)+'…' : i.name), topByQty.map(i => i.qty), 'rgba(76,175,125,0.7)');
+makeHbar('revenueBar', topByNet.map(i => i.name.length > 22 ? i.name.slice(0,22)+'…' : i.name), topByNet.map(i => i.net), amber);
+
+// ─── Beverages charts ─────────────────────────────────────
+makeHbar('draftBar', draftBeers.map(i => i.name), draftBeers.map(i => i.qty), 'rgba(232,160,32,0.6)');
+makeHbar('liquorBar', liquors.map(i => i.name), liquors.map(i => i.net), 'rgba(200,112,16,0.75)');
+
+// Beverage table
+const bevItems = topItems.filter(i => ['Draft Beer','Bottle Beer','Liquor','Wine','N/A Bev'].includes(i.cat)).slice(0, 20);
+const bevTable = document.getElementById('bevTable');
+if (bevTable) {
+  bevTable.innerHTML = `<thead><tr><th>Rank</th><th>Item</th><th>Category</th><th class="right">Qty Sold</th><th class="right">Net Revenue</th><th class="right">Avg Price</th></tr></thead><tbody>` +
+    bevItems.map((item, i) => `<tr>
+      <td class="rank ${i<3?'top'':''}">${i+1}</td>
+      <td>${item.name}</td>
+      <td><span class="badge">${item.cat}</span></td>
+      <td class="right mono">${item.qty.toLocaleString()}</td>
+      <td class="right mono">$${item.net.toLocaleString()}</td>
+      <td class="right mono">$${item.price.toFixed(2)}</td>
+    </tr>`).join('') + `</tbody>`;
+}
+
+// ─── Food charts ──────────────────────────────────────────
+makeVbar('foodCatBar', foodCats.map(c => c.name), foodCats.map(c => c.net),
+  foodCats.map((c, i) => i === 0 ? amberLight : i < 3 ? amber : 'rgba(232,160,32,0.45)')
+);
+makeVbar('wingsBar', wings.map(w => w.name), wings.map(w => w.qty), 'rgba(224,85,85,0.7)');
+
+// Food table
+const foodItems = topItems.filter(i => !['Draft Beer','Bottle Beer','Liquor','Wine','N/A Bev'].includes(i.cat));
+const foodTable = document.getElementById('foodTable');
+if (foodTable) {
+  foodTable.innerHTML = `<thead><tr><th>Rank</th><th>Item</th><th>Category</th><th class="right">Qty Sold</th><th class="right">Net Revenue</th><th class="right">Avg Price</th></tr></thead><tbody>` +
+    foodItems.map((item, i) => `<tr>
+      <td class="rank ${i<3?'top':''}">${i+1}</td>
+      <td>${item.name}</td>
+      <td><span class="badge green">${item.cat}</span></td>
+      <td class="right mono">${item.qty.toLocaleString()}</td>
+      <td class="right mono">$${item.net.toLocaleString()}</td>
+      <td class="right mono">$${item.price.toFixed(2)}</td>
+    </tr>`).join('') + `</tbody>`;
+}
+
+// ─── Top Items table ──────────────────────────────────────
+const allSorted = [...topItems].sort((a,b) => b.net - a.net);
+const topTable = document.getElementById('topItemsTable');
+if (topTable) {
+  const maxNet = allSorted[0].net;
+  topTable.innerHTML = `<thead><tr><th>Rank</th><th>Item</th><th>Category</th><th class="right">Qty Sold</th><th class="right">Net Revenue</th><th style="width:140px">Revenue Share</th></tr></thead><tbody>` +
+    allSorted.map((item, i) => `<tr>
+      <td class="rank ${i<3?'top':''}">${i+1}</td>
+      <td>${item.name}</td>
+      <td><span class="badge ${['Draft Beer','Bottle Beer','Liquor','Wine','N/A Bev'].includes(item.cat)?'blue':'green'}">${item.cat}</span></td>
+      <td class="right mono">${item.qty.toLocaleString()}</td>
+      <td class="right mono">$${item.net.toLocaleString()}</td>
+      <td><div class="mini-bar-wrap"><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:${Math.round((item.net/maxNet)*100)}%"></div></div><span style="font-family:'DM Mono';font-size:0.7rem;color:var(--muted)">${((item.net/3290750)*100).toFixed(1)}%</span></div></td>
+    </tr>`).join('') + `</tbody>`;
+}
+
+// ─── Tab switcher ─────────────────────────────────────────
+function showTab(name) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>
