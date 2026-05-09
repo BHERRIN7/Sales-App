@@ -3,725 +3,203 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sales Dashboard</title>
+<title>Sales Intelligence | Live Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
+/* --- STYLING & ANIMATIONS --- */
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#0f0d0a;--surface:#1a1713;--surface2:#231f19;--border:#2e2820;
   --amber:#e8a020;--amber-l:#f5c060;--amber-d:#7a5010;--amber-dim:rgba(232,160,32,0.15);
   --cream:#f0e8d8;--muted:#8a7d6a;--green:#4caf7d;--red:#e05555;--blue:#6090c8;
 }
-body{background:var(--bg);color:var(--cream);font-family:'DM Sans',sans-serif;min-height:100vh}
+body{background:var(--bg);color:var(--cream);font-family:'DM Sans',sans-serif;line-height:1.5;padding:20px}
 
-/* HEADER */
-header{background:linear-gradient(180deg,#1a1410,var(--bg));border-bottom:1px solid var(--border);padding:24px 36px;display:flex;align-items:flex-end;justify-content:space-between;gap:20px}
-.logo h1{font-family:'Bebas Neue',sans-serif;font-size:2.6rem;letter-spacing:.08em;color:var(--amber);line-height:1;text-shadow:0 0 40px rgba(232,160,32,.25)}
-.logo p{font-size:.72rem;color:var(--muted);letter-spacing:.2em;text-transform:uppercase;margin-top:3px}
-.hdr-stat{text-align:right}
-.hdr-stat .lbl{font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
-.hdr-stat .val{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--amber-l);letter-spacing:.05em}
+/* UI Elements */
+header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:30px;border-bottom:1px solid var(--border);padding-bottom:20px}
+h1{font-family:'Bebas Neue',cursive;font-size:3rem;letter-spacing:2px;color:var(--amber)}
+.tabs{display:flex;gap:10px;margin-bottom:25px;overflow-x:auto}
+.tab-btn{background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:10px 20px;cursor:pointer;font-weight:500;transition:0.2s}
+.tab-btn.active{background:var(--amber);color:var(--bg);border-color:var(--amber)}
+.panel{display:none}.panel.active{display:block}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;margin-bottom:20px}
+.card{background:var(--surface);border:1px solid var(--border);padding:20px;position:relative}
+.card-title{font-family:'Bebas Neue',cursive;font-size:1.4rem;margin-bottom:15px;display:flex;justify-content:space-between}
 
-/* TABS */
-nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 36px;display:flex;gap:0;overflow-x:auto}
-.tab-btn{font-size:.75rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:15px 22px;cursor:pointer;border:none;border-bottom:2px solid transparent;background:none;color:var(--muted);white-space:nowrap;transition:color .15s,border-color .15s}
-.tab-btn:hover{color:var(--cream)}
-.tab-btn.active{color:var(--amber);border-bottom-color:var(--amber)}
+/* Tables & KPIs */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:15px;margin-bottom:25px}
+.kpi{background:var(--surface2);padding:15px;border-left:3px solid var(--amber)}
+.kpi .lbl{font-size:0.7rem;color:var(--muted);text-transform:uppercase}
+.kpi .val{font-family:'DM Mono',monospace;font-size:1.5rem;font-weight:500}
+table{width:100%;border-collapse:collapse;font-size:0.85rem}
+th{text-align:left;padding:10px;color:var(--muted);border-bottom:1px solid var(--border);font-size:0.7rem;text-transform:uppercase}
+td{padding:10px;border-bottom:1px solid var(--border)}
 
-/* PANELS */
-.panel{display:none;padding:32px 36px;max-width:1400px;margin:0 auto}
-.panel.active{display:block}
+/* New Features CSS */
+.search-input { width: 100%; padding: 12px; margin-bottom: 15px; background: #000; border: 1px solid var(--border); color: #fff; border-radius: 4px; }
+.export-btn { background: transparent; color: var(--muted); border: 1px solid var(--border); padding: 4px 8px; font-size: 0.7rem; cursor: pointer; text-transform: uppercase; }
+.export-btn:hover { color: var(--amber); border-color: var(--amber); }
+@keyframes pulse-red { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+.alert-pulse { color: var(--red); animation: pulse-red 2s infinite; font-weight: bold; }
 
-/* KPI ROW */
-.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px}
-.kpi{background:var(--surface);border:1px solid var(--border);border-top:2px solid var(--amber-d);border-radius:3px;padding:20px}
-.kpi .lbl{font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
-.kpi .val{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:var(--amber-l);line-height:1}
-.kpi .sub{font-size:.72rem;color:var(--muted);margin-top:5px;font-family:'DM Mono',monospace}
-
-/* GRID */
-.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
-.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:18px}
-.grid-wide{display:grid;grid-template-columns:2fr 1fr;gap:18px;margin-bottom:18px}
-
-/* CARDS */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:22px}
-.card-title{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.1em;color:var(--amber);margin-bottom:3px}
-.card-sub{font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:18px}
-
-/* TABLE */
-table{width:100%;border-collapse:collapse;font-size:.82rem}
-th{text-align:left;font-size:.65rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--border);font-weight:500}
-th.r,td.r{text-align:right}
-td{padding:9px 10px;border-bottom:1px solid rgba(46,40,32,.4);color:var(--cream)}
-tr:hover td{background:rgba(232,160,32,.04)}
-td.mono{font-family:'DM Mono',monospace;font-size:.78rem}
-.rnk{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--amber-d);width:28px}
-.rnk.hi{color:var(--amber-l)}
-
-/* BADGE */
-.badge{display:inline-block;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;border-radius:2px}
-.badge.amber{background:rgba(232,160,32,.12);color:var(--amber);border:1px solid rgba(232,160,32,.2)}
-.badge.green{background:rgba(76,175,125,.12);color:var(--green);border:1px solid rgba(76,175,125,.2)}
-.badge.blue{background:rgba(96,144,200,.12);color:var(--blue);border:1px solid rgba(96,144,200,.2)}
-
-/* BAR MINI */
-.mini{display:flex;align-items:center;gap:8px}
-.mini-bg{flex:1;height:3px;background:var(--border);border-radius:2px}
-.mini-fill{height:3px;background:var(--amber);border-radius:2px;opacity:.7}
-.mini-pct{font-family:'DM Mono',monospace;font-size:.68rem;color:var(--muted);min-width:36px;text-align:right}
-
-/* NOTE */
-.note{background:rgba(232,160,32,.06);border:1px solid rgba(232,160,32,.2);border-left:3px solid var(--amber);border-radius:3px;padding:13px 16px;font-size:.82rem;line-height:1.6;margin-bottom:20px}
-.note strong{color:var(--amber)}
-
-/* COMPARE */
-.cmp-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:20px;align-items:start;margin-top:18px}
-.cmp-col-lbl{font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:.1em;color:var(--muted);text-align:center;padding-bottom:10px;border-bottom:1px solid var(--border);margin-bottom:14px}
-.cmp-metric{text-align:center;margin-bottom:14px}
-.cmp-metric .lbl{font-size:.65rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
-.cmp-metric .val{font-family:'Bebas Neue',sans-serif;font-size:1.7rem;letter-spacing:.04em}
-.cmp-arrows{display:flex;flex-direction:column;gap:16px;padding-top:36px}
-.delta{text-align:center}
-.delta .pct{font-family:'DM Mono',monospace;font-size:.8rem;padding:3px 9px;border-radius:3px;display:inline-block}
-.delta .dlbl{font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:3px}
-.pct.bad{background:rgba(224,85,85,.12);color:var(--red)}
-.pct.good{background:rgba(76,175,125,.12);color:var(--green)}
-.pct.flat{background:rgba(232,160,32,.12);color:var(--amber)}
-.val.neutral{color:var(--amber-l)}
-.val.good2{color:var(--green)}
-
-/* DONUT LEGEND */
-.dlegend{margin-top:14px;display:flex;flex-direction:column;gap:7px}
-.dleg-row{display:flex;align-items:center;gap:9px;font-size:.78rem}
-.dleg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.dleg-pct{margin-left:auto;font-family:'DM Mono',monospace;font-size:.72rem;color:var(--muted)}
-
-/* INSIGHTS GRID */
-.insights{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
-.insight{background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:15px}
-.insight .itag{font-size:.65rem;letter-spacing:.14em;text-transform:uppercase;margin-bottom:7px}
-.insight .itag.green{color:var(--green)}
-.insight .itag.amber{color:var(--amber)}
-.insight p{font-size:.82rem;line-height:1.6;color:var(--cream)}
-
-@media(max-width:860px){
-  .kpi-row{grid-template-columns:1fr 1fr}
-  .grid-2,.grid-3,.grid-wide{grid-template-columns:1fr}
-  header{flex-direction:column;align-items:flex-start}
-  .panel{padding:20px}
-  nav{padding:0 20px}
-}
+#loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
+.spinner { border: 4px solid var(--surface2); border-top: 4px solid var(--amber); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 20px; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
 
+<div id="loader">
+    <div class="spinner"></div>
+    <div style="font-family:'Bebas Neue'; font-size: 1.5rem; letter-spacing: 2px;">Syncing with GitHub...</div>
+</div>
+
 <header>
-  <div class="logo">
-    <h1>Sales Dashboard</h1>
-    <p>All-Time Performance Overview</p>
+  <div>
+    <h1>Sales Intelligence</h1>
+    <p style="color:var(--muted)">Connected to: <span style="color:var(--amber)">BHERRIN7/Sales-App</span></p>
   </div>
-  <div class="hdr-stat">
-    <div class="lbl">Total Net Revenue</div>
-    <div class="val">$3,290,750</div>
-  </div>
+  <div style="font-family:'DM Mono'; font-size: 0.8rem; color: var(--muted);" id="sync-time"></div>
 </header>
 
-<nav>
-  <button class="tab-btn active" data-tab="overview">Overview</button>
-  <button class="tab-btn" data-tab="beverages">Beverages</button>
-  <button class="tab-btn" data-tab="food">Food</button>
-  <button class="tab-btn" data-tab="items">Top Items</button>
-  <button class="tab-btn" data-tab="comparison">YoY Comparison</button>
-  <button class="tab-btn" data-tab="invoices">Invoices & Cost</button>
-  <button class="tab-btn" data-tab="inventory">Inventory</button>
-</nav>
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('ov')">Overview</button>
+  <button class="tab-btn" onclick="showTab('items')">Top Items</button>
+  <button class="tab-btn" onclick="showTab('inv')">Inventory</button>
+</div>
 
-<!-- OVERVIEW -->
-<div class="panel active" id="overview">
-  <div class="kpi-row">
-    <div class="kpi"><div class="lbl">Net Revenue</div><div class="val">$3.29M</div><div class="sub">$3,290,749.75 lifetime</div></div>
-    <div class="kpi"><div class="lbl">Items Sold</div><div class="val">395K</div><div class="sub">395,130 total items</div></div>
-    <div class="kpi"><div class="lbl">Avg Item Price</div><div class="val">$8.82</div><div class="sub">Across all categories</div></div>
-    <div class="kpi"><div class="lbl">Total Discounts</div><div class="val">$192K</div><div class="sub">5.5% of gross sales</div></div>
-  </div>
-
-  <div class="grid-wide">
-    <div class="card">
-      <div class="card-title">Revenue by Category</div>
-      <div class="card-sub">Net sales — top 15 categories</div>
-      <canvas id="c-cat" height="300"></canvas>
-    </div>
-    <div class="card">
-      <div class="card-title">Bev vs Food Split</div>
-      <div class="card-sub">Net revenue breakdown</div>
-      <div style="max-width:200px;margin:0 auto"><canvas id="c-split" height="200"></canvas></div>
-      <div class="dlegend" id="split-legend"></div>
-    </div>
-  </div>
-
-  <div class="grid-2">
-    <div class="card">
-      <div class="card-title">Top 10 by Volume</div>
-      <div class="card-sub">Items sold</div>
-      <canvas id="c-vol" height="260"></canvas>
-    </div>
-    <div class="card">
-      <div class="card-title">Top 10 by Revenue</div>
-      <div class="card-sub">Net amount</div>
-      <canvas id="c-rev" height="260"></canvas>
-    </div>
+<div class="panel active" id="ov">
+  <div class="kpi-row" id="kpi-container"></div>
+  <div class="grid">
+    <div class="card"><div class="card-title">Category Revenue</div><canvas id="c-cat"></canvas></div>
+    <div class="card"><div class="card-title">Beverage vs Food</div><canvas id="c-split"></canvas></div>
   </div>
 </div>
 
-<!-- BEVERAGES -->
-<div class="panel" id="beverages">
-  <div class="kpi-row">
-    <div class="kpi"><div class="lbl">Draft Beer</div><div class="val">$699K</div><div class="sub">21.2% of total · 123K pours</div></div>
-    <div class="kpi"><div class="lbl">Liquor</div><div class="val">$623K</div><div class="sub">18.9% of total · 70K orders</div></div>
-    <div class="kpi"><div class="lbl">Bottle Beer</div><div class="val">$98.5K</div><div class="sub">3.0% of total · 18.9K sold</div></div>
-    <div class="kpi"><div class="lbl">Wine + N/A</div><div class="val">$132K</div><div class="sub">4.0% of total</div></div>
-  </div>
-
-  <div class="grid-2">
-    <div class="card">
-      <div class="card-title">Draft Beer — Top Taps</div>
-      <div class="card-sub">By quantity sold</div>
-      <canvas id="c-draft" height="280"></canvas>
-    </div>
-    <div class="card">
-      <div class="card-title">Liquor — Top Pours</div>
-      <div class="card-sub">By net revenue</div>
-      <canvas id="c-liquor" height="280"></canvas>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">Beverage Detail</div>
-    <div class="card-sub">Top beverage items</div>
-    <table id="t-bev"></table>
-  </div>
-</div>
-
-<!-- FOOD -->
-<div class="panel" id="food">
-  <div class="kpi-row">
-    <div class="kpi"><div class="lbl">Shareables</div><div class="val">$367K</div><div class="sub">#1 food category</div></div>
-    <div class="kpi"><div class="lbl">Wings</div><div class="val">$308K</div><div class="sub">#2 food category</div></div>
-    <div class="kpi"><div class="lbl">Burgers</div><div class="val">$224K</div><div class="sub">#3 food category</div></div>
-    <div class="kpi"><div class="lbl">Sandwiches</div><div class="val">$219K</div><div class="sub">#4 food category</div></div>
-  </div>
-
-  <div class="grid-2">
-    <div class="card">
-      <div class="card-title">Food Category Revenue</div>
-      <div class="card-sub">Net sales</div>
-      <canvas id="c-foodcat" height="280"></canvas>
-    </div>
-    <div class="card">
-      <div class="card-title">Wings Breakdown</div>
-      <div class="card-sub">By quantity sold</div>
-      <canvas id="c-wings" height="280"></canvas>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">Food Item Detail</div>
-    <div class="card-sub">Top food items by revenue</div>
-    <table id="t-food"></table>
-  </div>
-</div>
-
-<!-- TOP ITEMS -->
 <div class="panel" id="items">
-  <div class="note"><strong>Reading this table:</strong> Sorted by net revenue. Your highest-revenue items are food (burgers, wings) but your highest-volume items are draft beers. The Pub Burger alone generated $108K lifetime.</div>
   <div class="card">
-    <div class="card-title">All Top Items</div>
-    <div class="card-sub">Ranked by net revenue — top 50</div>
+    <div class="card-title">
+        Product Performance
+        <button class="export-btn" onclick="exportCSV('t-items', 'Product_Sales.csv')">Export CSV</button>
+    </div>
+    <input type="text" id="item-search" class="search-input" placeholder="Filter items by name...">
     <table id="t-items"></table>
   </div>
 </div>
 
-<!-- INVOICES & COST -->
-<div class="panel" id="invoices">
-  <div class="kpi-row">
-    <div class="kpi"><div class="lbl">Total Bev Spend</div><div class="val">$228K</div><div class="sub">$227,628 across 530 invoices</div></div>
-    <div class="kpi"><div class="lbl">Invoice Count</div><div class="val">530</div><div class="sub">Mar 2025 – Apr 2026</div></div>
-    <div class="kpi"><div class="lbl">Avg Invoice</div><div class="val">$435</div><div class="sub">Per delivery</div></div>
-    <div class="kpi"><div class="lbl">Distributors</div><div class="val">9</div><div class="sub">United is largest at 29%</div></div>
-  </div>
-
-  <div class="grid-2" style="margin-bottom:18px">
+<div class="panel" id="inv">
+    <div class="kpi-row" id="kpi-inv-container"></div>
     <div class="card">
-      <div class="card-title">Monthly Beverage Spend</div>
-      <div class="card-sub">Invoice totals by month</div>
-      <canvas id="c-inv-monthly" height="220"></canvas>
+        <div class="card-title">Critical Stock Alerts</div>
+        <table id="t-inv-alerts"></table>
     </div>
-    <div class="card">
-      <div class="card-title">Spend by Distributor</div>
-      <div class="card-sub">All-time total</div>
-      <canvas id="c-inv-dist" height="220"></canvas>
-    </div>
-  </div>
-
-  <div class="grid-wide" style="margin-bottom:18px">
-    <div class="card">
-      <div class="card-title">Distributor Summary</div>
-      <div class="card-sub">Ranked by total spend</div>
-      <table id="t-inv-dist"></table>
-    </div>
-    <div class="card">
-      <div class="card-title">Distributor Mix</div>
-      <div class="card-sub">Share of total spend</div>
-      <div style="max-width:180px;margin:0 auto"><canvas id="c-inv-donut" height="180"></canvas></div>
-      <div class="dlegend" id="inv-dist-legend"></div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">Recent Invoices</div>
-    <div class="card-sub">Last 30 deliveries</div>
-    <table id="t-inv-recent"></table>
-  </div>
-</div>
-
-<!-- INVENTORY -->
-<div class="panel" id="inventory">
-  <div class="kpi-row">
-    <div class="kpi"><div class="lbl">On-Hand Value</div><div class="val">$33.8K</div><div class="sub">$33,802 across active stock</div></div>
-    <div class="kpi"><div class="lbl">Total SKUs</div><div class="val">826</div><div class="sub">412 with stock on hand</div></div>
-    <div class="kpi"><div class="lbl">Under Par</div><div class="val" style="color:var(--red)">37</div><div class="sub">Items needing reorder</div></div>
-    <div class="kpi"><div class="lbl">No Par Set</div><div class="val" style="color:var(--amber)">656</div><div class="sub">Items missing par levels</div></div>
-  </div>
-
-  <div class="note"><strong>Action needed:</strong> 656 items have no par level set — without pars, the system can't flag low stock automatically. Setting pars on your top sellers is a quick win for ordering efficiency.</div>
-
-  <div class="grid-2" style="margin-bottom:18px">
-    <div class="card">
-      <div class="card-title">Avg Cost per Unit by Category</div>
-      <div class="card-sub">Excluding categories with fewer than 3 items</div>
-      <canvas id="c-inv-catcost" height="300"></canvas>
-    </div>
-    <div class="card">
-      <div class="card-title">Inventory Value on Hand</div>
-      <div class="card-sub">By category — stock × cost per unit</div>
-      <canvas id="c-inv-catval" height="300"></canvas>
-    </div>
-  </div>
-
-  <div class="grid-2" style="margin-bottom:18px">
-    <div class="card" style="border-top:2px solid var(--red)">
-      <div class="card-title" style="color:var(--red)">Under Par — Needs Reorder</div>
-      <div class="card-sub">Current stock below set par level</div>
-      <table id="t-under-par"></table>
-    </div>
-    <div class="card" style="border-top:2px solid var(--green)">
-      <div class="card-title" style="color:var(--green)">Over Par — Overstocked</div>
-      <div class="card-sub">Current stock above par level</div>
-      <table id="t-over-par"></table>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">Highest Value Items On Hand</div>
-    <div class="card-sub">Stock × cost per unit — top 20</div>
-    <table id="t-high-val"></table>
-  </div>
-</div>
-
-<!-- YOY COMPARISON -->
-<div class="panel" id="comparison">
-  <div class="note"><strong>Context matters:</strong> June 2024 was your grand opening — the honeymoon rush inflates that month significantly. The ~46% drops reflect normalization, not a true decline. Your avg order value held almost perfectly flat, which is a healthy sign.</div>
-
-  <div class="card" style="margin-bottom:18px">
-    <div class="card-title">June 2024 vs June 2025</div>
-    <div class="card-sub">Opening month vs. one-year anniversary</div>
-    <div class="cmp-grid">
-      <div>
-        <div class="cmp-col-lbl">Jun 2024 — Opening</div>
-        <div class="cmp-metric"><div class="lbl">Net Sales</div><div class="val neutral">$295,191</div></div>
-        <div class="cmp-metric"><div class="lbl">Orders</div><div class="val neutral">6,572</div></div>
-        <div class="cmp-metric"><div class="lbl">Guests</div><div class="val neutral">12,702</div></div>
-        <div class="cmp-metric"><div class="lbl">Avg Order Value</div><div class="val neutral">$44.92</div></div>
-      </div>
-      <div class="cmp-arrows">
-        <div class="delta"><div class="pct bad">−46.0%</div><div class="dlbl">Net Sales</div></div>
-        <div class="delta"><div class="pct bad">−45.7%</div><div class="dlbl">Orders</div></div>
-        <div class="delta"><div class="pct bad">−45.9%</div><div class="dlbl">Guests</div></div>
-        <div class="delta"><div class="pct flat">−0.65%</div><div class="dlbl">AOV</div></div>
-      </div>
-      <div>
-        <div class="cmp-col-lbl">Jun 2025 — Steady State</div>
-        <div class="cmp-metric"><div class="lbl">Net Sales</div><div class="val good2">$159,357</div></div>
-        <div class="cmp-metric"><div class="lbl">Orders</div><div class="val good2">3,571</div></div>
-        <div class="cmp-metric"><div class="lbl">Guests</div><div class="val good2">6,878</div></div>
-        <div class="cmp-metric"><div class="lbl">Avg Order Value</div><div class="val good2">$44.63</div></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">What This Means</div>
-    <div class="card-sub">Key takeaways</div>
-    <div class="insights">
-      <div class="insight"><div class="itag green">✓ Stable Signal</div><p>Avg Order Value held flat at ~$44.65. Your regulars spend the same — opening crowd inflated volume, not spend per visit.</p></div>
-      <div class="insight"><div class="itag amber">⚡ Volume Story</div><p>The ~46% drop is uniform across sales, orders, and guests. Fewer visitors, not a pricing or menu problem.</p></div>
-      <div class="insight"><div class="itag amber">📊 Next Step</div><p>Compare Jun 2025 to Aug–Oct 2024 settled baseline to see if you're actually growing from your true run rate.</p></div>
-      <div class="insight"><div class="itag green">✓ Strong Base</div><p>$159K in a single month at ~$44 AOV is solid. $3.29M lifetime revenue is a strong first-year foundation.</p></div>
-    </div>
-  </div>
 </div>
 
 <script>
-// ── Embedded data from CSVs ────────────────────────────────
-const D = {"metrics":{"net_amount":3290749.75,"item_qty":395130.17,"avg_price":8.82,"gross":3483701.65,"discounts":192827.15,"bev_total":1553061.52,"food_total":1709738.56},"cat_sales":[{"name":"Draft Beer","net":699281.83},{"name":"Liquor","net":623154.91},{"name":"Shareables","net":366613.71},{"name":"Wings","net":307955.24},{"name":"Burgers","net":223782.05},{"name":"Sandwiches","net":218889.34},{"name":"Baskets","net":181347.95},{"name":"Pizza","net":139616.0},{"name":"Tacos","net":102111.02},{"name":"Bottle Beer","net":98542.8},{"name":"Salads","net":85834.41},{"name":"Wine","net":74214.7},{"name":"N/A Beverage","net":57867.28},{"name":"Sides","net":40082.1},{"name":"Desserts","net":16471.01}],"top_cats":[{"name":"Draft Beer","net":699281.83,"qty":123335.5,"avg":5.87},{"name":"Liquor","net":623154.91,"qty":69937.5,"avg":9.46},{"name":"Shareables","net":366613.71,"qty":34661.0,"avg":11.13},{"name":"Wings","net":307955.24,"qty":20492.0,"avg":15.78},{"name":"Burgers","net":223782.05,"qty":16655.0,"avg":14.35},{"name":"Sandwiches","net":218889.34,"qty":16728.0,"avg":14.13},{"name":"Baskets","net":181347.95,"qty":12670.0,"avg":15.3},{"name":"Pizza","net":139616.0,"qty":10628.0,"avg":14.53},{"name":"Tacos","net":102111.02,"qty":8725.0,"avg":12.72},{"name":"Bottle Beer","net":98542.8,"qty":18903.0,"avg":5.42},{"name":"Salads","net":85834.41,"qty":7275.0,"avg":12.7},{"name":"Wine","net":74214.7,"qty":8317.5,"avg":9.24},{"name":"N/A Beverage","net":57867.28,"qty":17378.0,"avg":3.41},{"name":"Sides","net":40082.1,"qty":11014.0,"avg":3.96},{"name":"Desserts","net":16471.01,"qty":1970.0,"avg":9.59}],"top_items_rev":[{"name":"All American Pub Burger 6oz","qty":8011.0,"net":108129.83,"avg":14.55},{"name":"Wing Basket","qty":6652.0,"net":99987.86,"avg":15.99},{"name":"10 Chicken Wings","qty":5982.0,"net":94073.24,"avg":16.55},{"name":"Chicken Tenders","qty":4684.0,"net":63482.7,"avg":14.65},{"name":"Titos Vodka","qty":6685.0,"net":53577.54,"avg":8.32},{"name":"Crispy Chicken Sandwich","qty":3816.0,"net":50358.61,"avg":14.26},{"name":"Hot Honey Pepperoni Pizza","qty":3696.0,"net":50183.45,"avg":14.43},{"name":"Creature Comforts Tropicalia","qty":8587.0,"net":49395.42,"avg":5.94},{"name":"Fish & Chips","qty":3051.0,"net":47884.6,"avg":16.32},{"name":"15 Chicken Wings","qty":1889.0,"net":42738.59,"avg":23.24},{"name":"Michelob Ultra","qty":8225.0,"net":37676.42,"avg":4.73},{"name":"Brisket Grilled Cheese","qty":2803.0,"net":37562.0,"avg":14.69},{"name":"Asian BBQ Crispy Chicken Sandwich","qty":2487.0,"net":36792.07,"avg":15.18},{"name":"Sweet Heat BBQ Bacon Burger 6oz","qty":2302.0,"net":34864.57,"avg":16.05},{"name":"6 Chicken Wings","qty":3198.0,"net":33871.86,"avg":11.04},{"name":"Boom Boom Shrimp","qty":2380.0,"net":33502.47,"avg":14.56},{"name":"Sirloin Steak Nachos","qty":1788.5,"net":31639.65,"avg":18.63},{"name":"Tap Out Margarita","qty":3704.0,"net":31548.19,"avg":8.86},{"name":"Pretzels","qty":3729.0,"net":31414.82,"avg":9.16},{"name":"Caesar Salad w Chicken","qty":2810.0,"net":30588.02,"avg":11.7},{"name":"Chicken Club Wrap","qty":2553.0,"net":30112.17,"avg":13.22},{"name":"Jameson Irish Whiskey","qty":3932.0,"net":29313.26,"avg":8.27},{"name":"Guinness Draught","qty":4414.0,"net":28584.38,"avg":6.68},{"name":"2 Steak Tacos","qty":2078.0,"net":26048.33,"avg":14.14},{"name":"Craft Your Masterpiece Pizza","qty":1861.0,"net":23188.66,"avg":14.88},{"name":"2 Smoked Brisket Tacos","qty":1631.0,"net":22856.77,"avg":14.59},{"name":"Cheese Curds","qty":2114.0,"net":22755.67,"avg":11.1},{"name":"2 Blackened Cod Tacos","qty":1740.0,"net":21081.01,"avg":12.91},{"name":"Sierra Nevada Hazy Little Thing","qty":4452.0,"net":20986.11,"avg":4.93},{"name":"Cigar City Jai Alai IPA","qty":3185.0,"net":20721.42,"avg":6.67},{"name":"Chicken Nachos","qty":1393.0,"net":20675.4,"avg":15.59},{"name":"Miller Lite","qty":4479.0,"net":19927.55,"avg":4.64},{"name":"Carnivore Pizza","qty":1287.0,"net":19314.32,"avg":16.16},{"name":"Shrimp Platter","qty":1214.0,"net":19244.56,"avg":16.44},{"name":"2 Grilled Poblano Chicken Tacos","qty":1943.0,"net":19153.93,"avg":11.01},{"name":"Sweetwater 420 Extra Pale Ale","qty":3067.0,"net":18919.32,"avg":6.27},{"name":"Pork Potstickers","qty":1496.0,"net":17917.6,"avg":12.46},{"name":"Brass Tap Classic Pizza","qty":1310.0,"net":17783.99,"avg":14.29},{"name":"Blue Moon Belgian White","qty":2716.0,"net":17479.01,"avg":6.55},{"name":"White Caprese Pizza","qty":1392.0,"net":16701.68,"avg":14.27},{"name":"Smoked Old Fashioned","qty":1237.0,"net":16677.34,"avg":13.63},{"name":"Bud Light btl","qty":4177.0,"net":16457.68,"avg":4.0},{"name":"Tap Salad with Chicken","qty":1332.0,"net":16415.81,"avg":13.2},{"name":"Yuengling Lager","qty":3645.0,"net":16202.26,"avg":4.63},{"name":"Lunazul Blanco Tequila","qty":2874.0,"net":16140.07,"avg":6.58},{"name":"Raspberry Lemon Drop Martini Cocktail","qty":1431.0,"net":16127.67,"avg":11.51},{"name":"Creature Comforts Classic City Lager","qty":2854.0,"net":15928.84,"avg":5.75},{"name":"Espresso Martini Cocktail","qty":1259.0,"net":15557.28,"avg":13.01},{"name":"All American Cheeseburger (Lunch)","qty":1540.0,"net":15490.87,"avg":10.33},{"name":"Hand Breaded Pickle Chips","qty":1553.0,"net":15037.81,"avg":9.94}],"top_items_qty":[{"name":"Creature Comforts Tropicalia","qty":8587.0,"net":49395.42,"avg":5.94},{"name":"Michelob Ultra","qty":8225.0,"net":37676.42,"avg":4.73},{"name":"All American Pub Burger 6oz","qty":8011.0,"net":108129.83,"avg":14.55},{"name":"Titos Vodka","qty":6685.0,"net":53577.54,"avg":8.32},{"name":"Wing Basket","qty":6652.0,"net":99987.86,"avg":15.99},{"name":"10 Chicken Wings","qty":5982.0,"net":94073.24,"avg":16.55},{"name":"Chicken Tenders","qty":4684.0,"net":63482.7,"avg":14.65},{"name":"Miller Lite","qty":4479.0,"net":19927.55,"avg":4.64},{"name":"Sierra Nevada Hazy Little Thing","qty":4452.0,"net":20986.11,"avg":4.93},{"name":"Guinness Draught","qty":4414.0,"net":28584.38,"avg":6.68},{"name":"Bud Light btl","qty":4177.0,"net":16457.68,"avg":4.0},{"name":"Coke","qty":4131.0,"net":14305.03,"avg":3.5},{"name":"Jameson Irish Whiskey","qty":3932.0,"net":29313.26,"avg":8.27},{"name":"Crispy Chicken Sandwich","qty":3816.0,"net":50358.61,"avg":14.26},{"name":"Pretzels","qty":3729.0,"net":31414.82,"avg":9.16},{"name":"Tap Out Margarita","qty":3704.0,"net":31548.19,"avg":8.86},{"name":"Hot Honey Pepperoni Pizza","qty":3696.0,"net":50183.45,"avg":14.43},{"name":"Yuengling Lager","qty":3645.0,"net":16202.26,"avg":4.63},{"name":"Side Crinkle Cut French Fries","qty":3489.0,"net":12175.07,"avg":3.81},{"name":"6 Chicken Wings","qty":3198.0,"net":33871.86,"avg":11.04}],"draft_items":[{"name":"Creature Comforts Tropicalia","qty":8587.0,"net":49395.42,"avg":5.94},{"name":"Michelob Ultra","qty":8225.0,"net":37676.42,"avg":4.73},{"name":"Miller Lite","qty":4479.0,"net":19927.55,"avg":4.64},{"name":"Sierra Nevada Hazy Little Thing","qty":4452.0,"net":20986.11,"avg":4.93},{"name":"Guinness Draught","qty":4414.0,"net":28584.38,"avg":6.68},{"name":"Yuengling Lager","qty":3645.0,"net":16202.26,"avg":4.63},{"name":"Cigar City Jai Alai IPA","qty":3185.0,"net":20721.42,"avg":6.67},{"name":"Sweetwater 420 Extra Pale Ale","qty":3067.0,"net":18919.32,"avg":6.27},{"name":"Creature Comforts Classic City Lager","qty":2854.0,"net":15928.84,"avg":5.75},{"name":"Blue Moon Belgian White","qty":2716.0,"net":17479.01,"avg":6.55}],"liquor_items":[{"name":"Titos Vodka","qty":6685.0,"net":53577.54,"avg":8.32},{"name":"Tap Out Margarita","qty":3704.0,"net":31548.19,"avg":8.86},{"name":"Jameson Irish Whiskey","qty":3932.0,"net":29313.26,"avg":8.27},{"name":"Smoked Old Fashioned","qty":1237.0,"net":16677.34,"avg":13.63},{"name":"Lunazul Blanco Tequila","qty":2874.0,"net":16140.07,"avg":6.58},{"name":"Raspberry Lemon Drop Martini","qty":1431.0,"net":16127.67,"avg":11.51},{"name":"Espresso Martini Cocktail","qty":1259.0,"net":15557.28,"avg":13.01},{"name":"Spicy Rita Cocktail","qty":1523.0,"net":14336.6,"avg":9.65},{"name":"Texas Mule","qty":1514.0,"net":13681.47,"avg":9.69},{"name":"Watermelon Margarita Cocktail","qty":1113.0,"net":13529.8,"avg":12.53}],"food_menu":[{"name":"All American Pub Burger 6oz","cat":"Burgers","qty":8011.0,"net":108129.83,"avg":14.55},{"name":"Wing Basket","cat":"Wings","qty":6649.0,"net":99972.86,"avg":16.0},{"name":"10 Chicken Wings","cat":"Wings","qty":5982.0,"net":94073.24,"avg":16.55},{"name":"Chicken Tenders","cat":"Baskets","qty":4680.0,"net":63475.83,"avg":14.66},{"name":"Crispy Chicken Sandwich","cat":"Sandwiches","qty":3814.0,"net":50353.36,"avg":14.27},{"name":"Hot Honey Pepperoni Pizza","cat":"Pizza","qty":3696.0,"net":50183.45,"avg":14.43},{"name":"Fish & Chips","cat":"Baskets","qty":3051.0,"net":47884.6,"avg":16.32},{"name":"15 Chicken Wings","cat":"Wings","qty":1889.0,"net":42738.59,"avg":23.24},{"name":"Brisket Grilled Cheese","cat":"Sandwiches","qty":2802.0,"net":37562.0,"avg":14.69},{"name":"Asian BBQ Crispy Chicken Sandwich","cat":"Sandwiches","qty":2485.0,"net":36753.83,"avg":15.18},{"name":"Sweet Heat BBQ Bacon Burger 6oz","cat":"Burgers","qty":2302.0,"net":34864.57,"avg":16.05},{"name":"6 Chicken Wings","cat":"Wings","qty":3197.0,"net":33867.36,"avg":11.04},{"name":"Boom Boom Shrimp","cat":"Shareables","qty":2376.0,"net":33502.47,"avg":14.58},{"name":"Sirloin Steak Nachos","cat":"Shareables","qty":1788.5,"net":31639.65,"avg":18.63},{"name":"Pretzels","cat":"Shareables","qty":3729.0,"net":31414.82,"avg":9.16},{"name":"Caesar Salad w Chicken","cat":"Salads","qty":2810.0,"net":30588.02,"avg":11.7},{"name":"Chicken Club Wrap","cat":"Sandwiches","qty":2549.0,"net":30092.17,"avg":13.23},{"name":"2 Steak Tacos","cat":"Tacos","qty":2077.0,"net":26048.33,"avg":14.15},{"name":"Craft Your Masterpiece Pizza","cat":"Pizza","qty":1861.0,"net":23188.66,"avg":14.88},{"name":"2 Smoked Brisket Tacos","cat":"Tacos","qty":1631.0,"net":22856.77,"avg":14.59},{"name":"Cheese Curds","cat":"Shareables","qty":2112.0,"net":22745.66,"avg":11.11},{"name":"2 Blackened Cod Tacos","cat":"Tacos","qty":1740.0,"net":21081.01,"avg":12.91},{"name":"Chicken Nachos","cat":"Shareables","qty":1393.0,"net":20675.4,"avg":15.59},{"name":"Carnivore Pizza","cat":"Pizza","qty":1286.0,"net":19302.32,"avg":16.17},{"name":"Shrimp Platter","cat":"Baskets","qty":1214.0,"net":19244.56,"avg":16.44},{"name":"2 Grilled Poblano Chicken Tacos","cat":"Tacos","qty":1943.0,"net":19153.93,"avg":11.01},{"name":"Pork Potstickers","cat":"Shareables","qty":1493.0,"net":17908.59,"avg":12.48},{"name":"Brass Tap Classic Pizza","cat":"Pizza","qty":1310.0,"net":17783.99,"avg":14.29},{"name":"White Caprese Pizza","cat":"Pizza","qty":1392.0,"net":16701.68,"avg":14.27},{"name":"Tap Salad with Chicken","cat":"Salads","qty":1332.0,"net":16415.81,"avg":13.2}],"wings_items":[{"name":"Wing Basket","qty":6649.0,"net":99972.86},{"name":"10 Chicken Wings","qty":5982.0,"net":94073.24},{"name":"6 Chicken Wings","qty":3197.0,"net":33867.36},{"name":"15 Chicken Wings","qty":1889.0,"net":42738.59},{"name":"Wing Basket (Lunch)","qty":1113.0,"net":11297.4},{"name":"6 Boneless Wings","qty":601.0,"net":6144.88},{"name":"Wednesday Wing Basket","qty":347.0,"net":3428.38},{"name":"20 Chicken Wings","qty":339.0,"net":9878.66}],"mods":[{"name":"DRAFT","qty":72513.5},{"name":"Side of Ketchup*","qty":27816.0},{"name":"DRAFT 16","qty":26328.0},{"name":"French Fries","qty":18308.0},{"name":"Ketchup","qty":17141.0},{"name":"French Fries*","qty":16144.0},{"name":"Side of Buttermilk Ranch Dressing*","qty":13695.0},{"name":"Regular Crust","qty":7127.67},{"name":"Cheddar Cheese*","qty":6976.0},{"name":"TASTE","qty":6312.0},{"name":"Medium Well*","qty":5985.0},{"name":"Medium Well","qty":5339.0},{"name":"Tater Tots*","qty":5249.0},{"name":"DRAFT 10","qty":4796.0},{"name":"DRAFT 20","qty":4385.0}]};
+const RAW_URL = "https://raw.githubusercontent.com/BHERRIN7/Sales-App/refs/heads/main/reports/latest_data.json";
 
-// ── Chart defaults ────────────────────────────────────────
-Chart.defaults.color = '#8a7d6a';
-Chart.defaults.font.family = "'DM Sans', sans-serif";
-Chart.defaults.font.size = 11;
-
-const A = '#e8a020', AL = '#f5c060', G = '#4caf7d', B = '#6090c8';
-const tip = {
-  backgroundColor:'#1a1713', borderColor:'#2e2820', borderWidth:1,
-  titleColor:'#f5c060', bodyColor:'#f0e8d8', padding:10
-};
-
-function hbar(id, labels, data, colors) {
-  const ctx = document.getElementById(id);
-  if (!ctx) return;
-  new Chart(ctx, {
-    type:'bar',
-    data:{ labels, datasets:[{ data, backgroundColor: colors || A, borderRadius:2, borderSkipped:false }] },
-    options:{
-      indexAxis:'y', responsive:true,
-      plugins:{ legend:{display:false}, tooltip:{...tip, callbacks:{label:c=>' '+c.formattedValue}} },
-      scales:{
-        x:{ grid:{color:'rgba(46,40,32,.5)'}, ticks:{color:'#8a7d6a'} },
-        y:{ grid:{display:false}, ticks:{color:'#c8b898', font:{size:11}} }
-      }
+async function loadData() {
+    try {
+        const response = await fetch(RAW_URL);
+        if (!response.ok) throw new Error("Failed to fetch data");
+        const D = await response.json();
+        
+        document.getElementById('loader').style.display = 'none';
+        document.getElementById('sync-time').innerText = "Last Sync: " + new Date().toLocaleTimeString();
+        
+        renderOverview(D);
+        renderTopItems(D);
+        renderInventory(D);
+        
+    } catch (err) {
+        document.querySelector('#loader div:last-child').innerText = "Connection Error. Check GitHub URL.";
+        console.error(err);
     }
-  });
 }
 
-function vbar(id, labels, data, colors) {
-  const ctx = document.getElementById(id);
-  if (!ctx) return;
-  new Chart(ctx, {
-    type:'bar',
-    data:{ labels, datasets:[{ data, backgroundColor: colors || A, borderRadius:2 }] },
-    options:{
-      responsive:true,
-      plugins:{ legend:{display:false}, tooltip:{...tip} },
-      scales:{
-        x:{ grid:{display:false}, ticks:{color:'#8a7d6a', maxRotation:35, font:{size:10}} },
-        y:{ grid:{color:'rgba(46,40,32,.5)'}, ticks:{color:'#8a7d6a', callback:v=>'$'+Math.round(v/1000)+'K'} }
-      }
-    }
-  });
+function renderOverview(D) {
+    const kpis = [
+        {lbl: 'Net Sales', val: '$' + (D.kpis.net_sales / 1000000).toFixed(2) + 'M'},
+        {lbl: 'Total Items', val: (D.kpis.items_sold / 1000).toFixed(1) + 'K'},
+        {lbl: 'Avg Price', val: '$' + D.kpis.avg_price.toFixed(2)}
+    ];
+    document.getElementById('kpi-container').innerHTML = kpis.map(k => `<div class="kpi"><div class="lbl">${k.lbl}</div><div class="val">${k.val}</div></div>`).join('');
+
+    // Charts
+    new Chart(document.getElementById('c-cat'), {
+        type: 'bar',
+        data: {
+            labels: D.category_performance.map(c => c.name),
+            datasets: [{ data: D.category_performance.map(c => c.revenue), backgroundColor: '#e8a020' }]
+        },
+        options: { indexAxis: 'y', plugins: { legend: { display: false } } }
+    });
+    
+    new Chart(document.getElementById('c-split'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Bev', 'Food'],
+            datasets: [{ data: [D.kpis.bev_net, D.kpis.food_net], backgroundColor: ['#e8a020', '#2e2820'] }]
+        }
+    });
 }
 
-function fmtMoney(n) {
-  if (n>=1000000) return '$'+(n/1000000).toFixed(2)+'M';
-  if (n>=1000) return '$'+(n/1000).toFixed(1)+'K';
-  return '$'+n.toFixed(0);
+function renderTopItems(D) {
+    const table = document.getElementById('t-items');
+    let html = `<thead><tr><th>Rank</th><th>Name</th><th>Revenue</th></tr></thead><tbody>`;
+    D.top_items.forEach(item => {
+        html += `<tr><td>${item.rank}</td><td>${item.name}</td><td class="mono">$${item.revenue.toLocaleString()}</td></tr>`;
+    });
+    table.innerHTML = html + `</tbody>`;
+
+    // Live Search Logic
+    document.getElementById('item-search').addEventListener('keyup', function() {
+        const term = this.value.toLowerCase();
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(r => r.style.display = r.innerText.toLowerCase().includes(term) ? '' : 'none');
+    });
 }
 
-function buildTable(el, rows, cols) {
-  // cols: [{key, label, fmt, cls}]
-  let html = '<thead><tr>' + cols.map(c=>`<th class="${c.cls||''}">${c.label}</th>`).join('') + '</tr></thead><tbody>';
-  rows.forEach((r, i) => {
-    html += '<tr>' + cols.map(c => {
-      const v = c.key === '_rank' ? i+1 : r[c.key];
-      const disp = c.fmt ? c.fmt(v, r, i) : v;
-      return `<td class="${c.cls||''}">${disp}</td>`;
-    }).join('') + '</tr>';
-  });
-  html += '</tbody>';
-  el.innerHTML = html;
+function renderInventory(D) {
+    const invKpis = [
+        {lbl: 'Total Value', val: '$' + (D.inventory.on_hand_value / 1000).toFixed(1) + 'K'},
+        {lbl: 'Under Par', val: D.inventory.under_par_count, class: 'alert-pulse'}
+    ];
+    document.getElementById('kpi-inv-container').innerHTML = invKpis.map(k => `
+        <div class="kpi"><div class="lbl">${k.lbl}</div><div class="val ${k.class || ''}">${k.val}</div></div>
+    `).join('');
+
+    const alertTable = document.getElementById('t-inv-alerts');
+    let html = `<thead><tr><th>Item</th><th>Stock</th><th>Par</th></tr></thead><tbody>`;
+    D.inventory.under_par_items.forEach(item => {
+        html += `<tr><td>${item.name}</td><td style="color:var(--red)">${item.stock}</td><td>${item.par}</td></tr>`;
+    });
+    alertTable.innerHTML = html + `</tbody>`;
 }
 
-// ── Overview charts ───────────────────────────────────────
-(function(){
-  const cats = D.cat_sales;
-  const catColors = cats.map((_,i) => i===0?AL : i<3?A : i<6?'rgba(232,160,32,.55)':'rgba(232,160,32,.3)');
-  hbar('c-cat', cats.map(c=>c.name), cats.map(c=>c.net), catColors);
-
-  // Donut
-  const bevCats = ['Draft Beer','Liquor','Bottle Beer','Wine','N/A Beverage'];
-  const bevNet = D.cat_sales.filter(c=>bevCats.includes(c.name)).reduce((s,c)=>s+c.net,0);
-  const foodNet = D.cat_sales.filter(c=>!bevCats.includes(c.name)).reduce((s,c)=>s+c.net,0);
-  const draftNet = D.cat_sales.find(c=>c.name==='Draft Beer')?.net||0;
-  const liquorNet = D.cat_sales.find(c=>c.name==='Liquor')?.net||0;
-  const otherBev = bevNet - draftNet - liquorNet;
-  const dLabels = ['Draft Beer','Liquor','Food','Other Bev'];
-  const dData = [draftNet, liquorNet, foodNet, otherBev];
-  const dColors = [A, '#c87010', G, B];
-  const total = dData.reduce((s,v)=>s+v,0);
-
-  const dCtx = document.getElementById('c-split');
-  if (dCtx) {
-    new Chart(dCtx, {
-      type:'doughnut',
-      data:{ labels:dLabels, datasets:[{ data:dData, backgroundColor:dColors, borderColor:'#0f0d0a', borderWidth:3, hoverOffset:6 }] },
-      options:{ cutout:'65%', plugins:{ legend:{display:false}, tooltip:{...tip, callbacks:{label:c=>' $'+Math.round(c.parsed).toLocaleString()}} } }
-    });
-  }
-  const leg = document.getElementById('split-legend');
-  if (leg) dLabels.forEach((l,i)=>{
-    const pct = ((dData[i]/total)*100).toFixed(1);
-    leg.innerHTML += `<div class="dleg-row"><div class="dleg-dot" style="background:${dColors[i]}"></div><span>${l}</span><span class="dleg-pct">${pct}%</span></div>`;
-  });
-
-  // Volume & revenue leaders
-  const byQty = D.top_items_qty.slice(0,10);
-  const byRev = D.top_items_rev.slice(0,10);
-  hbar('c-vol', byQty.map(i=>i.name.length>24?i.name.slice(0,24)+'…':i.name), byQty.map(i=>i.qty), G);
-  hbar('c-rev', byRev.map(i=>i.name.length>24?i.name.slice(0,24)+'…':i.name), byRev.map(i=>i.net), A);
-})();
-
-// ── Beverage charts ───────────────────────────────────────
-(function(){
-  hbar('c-draft', D.draft_items.map(i=>i.name), D.draft_items.map(i=>i.qty), 'rgba(232,160,32,.6)');
-  hbar('c-liquor', D.liquor_items.map(i=>i.name.length>22?i.name.slice(0,22)+'…':i.name), D.liquor_items.map(i=>i.net), 'rgba(200,112,16,.75)');
-
-  const bevCatNames = ['Draft Beer','Liquor','Bottle Beer','Wine','N/A Beverage'];
-  const bevItems = D.top_items_rev.filter(i=> {
-    // classify by avg price (rough heuristic) or just use all — we'll use cat_sales-mapped data
-    return ['Creature Comforts Tropicalia','Michelob Ultra','Titos Vodka','Tap Out Margarita','Jameson Irish Whiskey','Guinness Draught','Smoked Old Fashioned','Lunazul Blanco Tequila','Raspberry Lemon Drop Martini Cocktail','Espresso Martini Cocktail','Spicy Rita Cocktail','Sierra Nevada Hazy Little Thing','Miller Lite','Bud Light btl','Yuengling Lager','Cigar City Jai Alai IPA','Blue Moon Belgian White','Sweetwater 420 Extra Pale Ale'].includes(i.name);
-  });
-  buildTable(document.getElementById('t-bev'), bevItems, [
-    {key:'_rank', label:'#', fmt:(v,r,i)=>`<span class="rnk ${i<3?'hi':''}">${v}</span>`},
-    {key:'name', label:'Item'},
-    {key:'qty', label:'Qty Sold', cls:'r', fmt:v=>`<span class="mono">${Math.round(v).toLocaleString()}</span>`},
-    {key:'net', label:'Net Revenue', cls:'r', fmt:v=>`<span class="mono">${fmtMoney(v)}</span>`},
-    {key:'avg', label:'Avg Price', cls:'r', fmt:v=>`<span class="mono">$${v.toFixed(2)}</span>`},
-  ]);
-})();
-
-// ── Food charts ───────────────────────────────────────────
-(function(){
-  const foodCats = ['Shareables','Wings','Burgers','Sandwiches','Baskets','Pizza','Tacos','Salads','Sides','Desserts'];
-  const fcData = foodCats.map(name => D.cat_sales.find(c=>c.name===name)?.net||0);
-  const fcColors = fcData.map((_,i) => i===0?AL : i<3?A : i<5?'rgba(232,160,32,.55)':'rgba(232,160,32,.3)');
-  vbar('c-foodcat', foodCats, fcData, fcColors);
-  hbar('c-wings', D.wings_items.map(i=>i.name), D.wings_items.map(i=>i.qty), 'rgba(224,85,85,.65)');
-
-  const catColors = {Burgers:A, Wings:'#e05555', Sandwiches:B, Baskets:'#c87010', Pizza:G, Shareables:AL, Salads:'#80c0a0', Tacos:'#e08840'};
-  buildTable(document.getElementById('t-food'), D.food_menu, [
-    {key:'_rank', label:'#', fmt:(v,r,i)=>`<span class="rnk ${i<3?'hi':''}">${v}</span>`},
-    {key:'name', label:'Item'},
-    {key:'cat', label:'Category', fmt:v=>`<span class="badge amber">${v}</span>`},
-    {key:'qty', label:'Qty Sold', cls:'r', fmt:v=>`<span class="mono">${Math.round(v).toLocaleString()}</span>`},
-    {key:'net', label:'Net Revenue', cls:'r', fmt:v=>`<span class="mono">${fmtMoney(v)}</span>`},
-    {key:'avg', label:'Avg Price', cls:'r', fmt:v=>`<span class="mono">$${v.toFixed(2)}</span>`},
-  ]);
-})();
-
-// ── Top Items table ───────────────────────────────────────
-(function(){
-  const maxNet = D.top_items_rev[0].net;
-  const bevNames = new Set(['Creature Comforts Tropicalia','Michelob Ultra','Titos Vodka','Tap Out Margarita','Jameson Irish Whiskey','Guinness Draught','Smoked Old Fashioned','Lunazul Blanco Tequila','Raspberry Lemon Drop Martini Cocktail','Espresso Martini Cocktail','Sierra Nevada Hazy Little Thing','Miller Lite','Bud Light btl','Yuengling Lager','Cigar City Jai Alai IPA','Blue Moon Belgian White','Sweetwater 420 Extra Pale Ale']);
-  buildTable(document.getElementById('t-items'), D.top_items_rev, [
-    {key:'_rank', label:'#', fmt:(v,r,i)=>`<span class="rnk ${i<3?'hi':''}">${v}</span>`},
-    {key:'name', label:'Item'},
-    {key:'name', label:'Type', fmt:v=>`<span class="badge ${bevNames.has(v)?'blue':'green'}">${bevNames.has(v)?'Bev':'Food'}</span>`},
-    {key:'qty', label:'Qty Sold', cls:'r', fmt:v=>`<span class="mono">${Math.round(v).toLocaleString()}</span>`},
-    {key:'net', label:'Net Revenue', cls:'r', fmt:v=>`<span class="mono">${fmtMoney(v)}</span>`},
-    {key:'avg', label:'Avg Price', cls:'r', fmt:v=>`<span class="mono">$${v.toFixed(2)}</span>`},
-    {key:'net', label:'Share', fmt:v=>{
-      const pct=((v/3290750)*100).toFixed(1);
-      const w=Math.round((v/maxNet)*100);
-      return `<div class="mini"><div class="mini-bg"><div class="mini-fill" style="width:${w}%"></div></div><span class="mini-pct">${pct}%</span></div>`;
-    }},
-  ]);
-})();
-
-// ── Invoice data ──────────────────────────────────────────
-const INV = {"total_spend":227628.16,"invoice_count":530,"avg_invoice":435.24,"monthly":[{"month":"2025-03","total":12039.64},{"month":"2025-04","total":19416.08},{"month":"2025-05","total":14867.76},{"month":"2025-06","total":16548.59},{"month":"2025-07","total":17413.73},{"month":"2025-08","total":15527.8},{"month":"2025-09","total":21195.74},{"month":"2025-10","total":16253.88},{"month":"2025-11","total":14985.86},{"month":"2025-12","total":16034.69},{"month":"2026-01","total":14044.02},{"month":"2026-02","total":13632.46},{"month":"2026-03","total":20718.16},{"month":"2026-04","total":14949.75}],"distributors":[{"name":"United Distributors","total":66132.17,"count":134},{"name":"Savannah Distributing","total":48318.02,"count":96},{"name":"Atlanta Beverage","total":34601.38,"count":85},{"name":"Empire Distributors, Inc.","total":25290.43,"count":63},{"name":"Georgia Crown","total":22294.82,"count":58},{"name":"Republic National Distributing Company","total":18098.35,"count":43},{"name":"General Wholesale","total":7188.99,"count":27},{"name":"Modern Hops LLC","total":4385.0,"count":9},{"name":"Liberator","total":1319.0,"count":8}],"recent":[{"date":"Apr 29, 2026","distributor":"Atlanta Beverage","invoice":"2120470","total":485.6},{"date":"Apr 28, 2026","distributor":"Georgia Crown","invoice":"6269731","total":552.74},{"date":"Apr 28, 2026","distributor":"Savannah Distributing","invoice":"6421641","total":395.31},{"date":"Apr 28, 2026","distributor":"United Distributors","invoice":"30519310","total":923.76},{"date":"Apr 28, 2026","distributor":"Empire Distributors, Inc.","invoice":"715211515","total":597.12},{"date":"Apr 24, 2026","distributor":"United Distributors","invoice":"30478912","total":1140.89},{"date":"Apr 22, 2026","distributor":"Atlanta Beverage","invoice":"2111098","total":989.9},{"date":"Apr 22, 2026","distributor":"Atlanta Beverage","invoice":"2111097","total":19.5},{"date":"Apr 21, 2026","distributor":"United Distributors","invoice":"30478910","total":307.13},{"date":"Apr 21, 2026","distributor":"Savannah Distributing","invoice":"6400687","total":635.48},{"date":"Apr 21, 2026","distributor":"Savannah Distributing","invoice":"6408280","total":1318.5},{"date":"Apr 21, 2026","distributor":"Empire Distributors, Inc.","invoice":"715176276","total":708.99},{"date":"Apr 21, 2026","distributor":"Georgia Crown","invoice":"6263331","total":386.14},{"date":"Apr 17, 2026","distributor":"United Distributors","invoice":"30436790","total":664.88},{"date":"Apr 17, 2026","distributor":"Georgia Crown","invoice":"6260148","total":155.0},{"date":"Apr 15, 2026","distributor":"Atlanta Beverage","invoice":"2101544","total":17.0},{"date":"Apr 14, 2026","distributor":"General Wholesale","invoice":"8223835","total":255.93},{"date":"Apr 14, 2026","distributor":"United Distributors","invoice":"30436789","total":161.3},{"date":"Apr 14, 2026","distributor":"Georgia Crown","invoice":"6257205","total":138.48},{"date":"Apr 14, 2026","distributor":"Empire Distributors, Inc.","invoice":"715140991","total":411.0},{"date":"Apr 14, 2026","distributor":"Savannah Distributing","invoice":"6394571","total":386.98},{"date":"Apr 10, 2026","distributor":"United Distributors","invoice":"30397052","total":455.0},{"date":"Apr 08, 2026","distributor":"Atlanta Beverage","invoice":"2091677","total":657.6},{"date":"Apr 07, 2026","distributor":"Empire Distributors, Inc.","invoice":"715106949","total":444.6},{"date":"Apr 07, 2026","distributor":"United Distributors","invoice":"30397053","total":203.48},{"date":"Apr 07, 2026","distributor":"Savannah Distributing","invoice":"6379373","total":500.5},{"date":"Apr 07, 2026","distributor":"Georgia Crown","invoice":"6250747","total":409.41},{"date":"Apr 03, 2026","distributor":"United Distributors","invoice":"30361291","total":536.89},{"date":"Apr 03, 2026","distributor":"General Wholesale","invoice":"8195184","total":276.0},{"date":"Apr 01, 2026","distributor":"Atlanta Beverage","invoice":"2083791","total":282.5}]};
-
-(function(){
-  // Monthly spend line chart
-  const mCtx = document.getElementById('c-inv-monthly');
-  if (mCtx) {
-    new Chart(mCtx, {
-      type: 'line',
-      data: {
-        labels: INV.monthly.map(m => m.month),
-        datasets: [{
-          data: INV.monthly.map(m => m.total),
-          borderColor: A, backgroundColor: 'rgba(232,160,32,.08)',
-          pointBackgroundColor: A, pointRadius: 4, tension: 0.3, fill: true
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend:{display:false}, tooltip:{...tip, callbacks:{label:c=>' $'+c.parsed.y.toLocaleString()}} },
-        scales: {
-          x: { grid:{color:'rgba(46,40,32,.5)'}, ticks:{color:'#8a7d6a'} },
-          y: { grid:{color:'rgba(46,40,32,.5)'}, ticks:{color:'#8a7d6a', callback:v=>'$'+Math.round(v/1000)+'K'} }
-        }
-      }
-    });
-  }
-
-  // Distributor bar
-  const dCtx = document.getElementById('c-inv-dist');
-  if (dCtx) {
-    const distColors = INV.distributors.map((_,i) => i===0?AL : i<3?A : i<5?'rgba(232,160,32,.55)':'rgba(232,160,32,.3)');
-    new Chart(dCtx, {
-      type: 'bar',
-      data: {
-        labels: INV.distributors.map(d => d.name.length > 22 ? d.name.slice(0,22)+'…' : d.name),
-        datasets: [{ data: INV.distributors.map(d => d.total), backgroundColor: distColors, borderRadius: 2, borderSkipped: false }]
-      },
-      options: {
-        indexAxis: 'y', responsive: true,
-        plugins: { legend:{display:false}, tooltip:{...tip, callbacks:{label:c=>' $'+Math.round(c.parsed.x).toLocaleString()}} },
-        scales: {
-          x: { grid:{color:'rgba(46,40,32,.5)'}, ticks:{color:'#8a7d6a', callback:v=>'$'+Math.round(v/1000)+'K'} },
-          y: { grid:{display:false}, ticks:{color:'#c8b898', font:{size:11}} }
-        }
-      }
-    });
-  }
-
-  // Distributor donut
-  const ddCtx = document.getElementById('c-inv-donut');
-  if (ddCtx) {
-    const dColors = [A, AL, '#c87010', G, B, '#e08840', '#80c0a0', '#c080c0', '#a0a0a0'];
-    new Chart(ddCtx, {
-      type: 'doughnut',
-      data: {
-        labels: INV.distributors.map(d => d.name),
-        datasets: [{ data: INV.distributors.map(d => d.total), backgroundColor: dColors, borderColor:'#0f0d0a', borderWidth:3, hoverOffset:6 }]
-      },
-      options: { cutout:'60%', plugins:{ legend:{display:false}, tooltip:{...tip, callbacks:{label:c=>' $'+Math.round(c.parsed).toLocaleString()}} } }
-    });
-    const leg = document.getElementById('inv-dist-legend');
-    if (leg) {
-      const tot = INV.distributors.reduce((s,d)=>s+d.total,0);
-      INV.distributors.forEach((d,i) => {
-        const pct = ((d.total/tot)*100).toFixed(1);
-        leg.innerHTML += `<div class="dleg-row"><div class="dleg-dot" style="background:${dColors[i]}"></div><span>${d.name.length>24?d.name.slice(0,24)+'…':d.name}</span><span class="dleg-pct">${pct}%</span></div>`;
-      });
-    }
-  }
-
-  // Recent invoices table
-  buildTable(document.getElementById('t-inv-recent'), INV.recent, [
-    {key:'date', label:'Date'},
-    {key:'distributor', label:'Distributor'},
-    {key:'invoice', label:'Invoice #', fmt:v=>`<span class="mono" style="color:var(--muted)">${v}</span>`},
-    {key:'total', label:'Amount', cls:'r', fmt:v=>`<span class="mono">$${v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>`},
-  ]);
-
-  // Distributor summary table
-  buildTable(document.getElementById('t-inv-dist'), INV.distributors, [
-    {key:'_rank', label:'#', fmt:(v,r,i)=>`<span class="rnk ${i<3?'hi':''}">${v}</span>`},
-    {key:'name', label:'Distributor'},
-    {key:'count', label:'Invoices', cls:'r', fmt:v=>`<span class="mono">${v}</span>`},
-    {key:'total', label:'Total Spend', cls:'r', fmt:v=>`<span class="mono">$${v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>`},
-    {key:'total', label:'Avg/Invoice', cls:'r', fmt:(v,r)=>`<span class="mono">$${(v/r.count).toFixed(2)}</span>`},
-    {key:'total', label:'Share', fmt:(v)=>{
-      const tot=INV.distributors.reduce((s,d)=>s+d.total,0);
-      const pct=((v/tot)*100).toFixed(1);
-      const w=Math.round((v/INV.distributors[0].total)*100);
-      return `<div class="mini"><div class="mini-bg"><div class="mini-fill" style="width:${w}%"></div></div><span class="mini-pct">${pct}%</span></div>`;
-    }},
-  ]);
-})();
-
-// ── Inventory data ────────────────────────────────────────
-const IV = {"summary":{"total_inv_value":33802.23,"total_items":826,"items_with_stock":412,"items_under_par":37,"no_par_count":656,"over_par_count":100},"cat_summary":[{"name":"Beer Keg","count":221,"avg_cost":139.04,"total_value":8373.71,"items_with_par":22},{"name":"Unknown","count":77,"avg_cost":57.89,"total_value":3059.19,"items_with_par":1},{"name":"Beer Can","count":70,"avg_cost":4.82,"total_value":1020.42,"items_with_par":30},{"name":"Scotch and Whisky","count":61,"avg_cost":42.36,"total_value":4105.46,"items_with_par":7},{"name":"Tequila","count":53,"avg_cost":44.64,"total_value":4300.19,"items_with_par":11},{"name":"Beer Bottle","count":44,"avg_cost":3.48,"total_value":1422.27,"items_with_par":19},{"name":"Liqueur and Cream","count":39,"avg_cost":22.01,"total_value":2420.03,"items_with_par":12},{"name":"Coolers and Pre-Mixed Drinks","count":31,"avg_cost":4.34,"total_value":644.41,"items_with_par":9},{"name":"Vodka","count":31,"avg_cost":19.83,"total_value":1883.6,"items_with_par":8},{"name":"Bourbon","count":27,"avg_cost":65.51,"total_value":1573.32,"items_with_par":2},{"name":"Syrup","count":22,"avg_cost":10.18,"total_value":519.36,"items_with_par":4},{"name":"Gin","count":20,"avg_cost":37.26,"total_value":716.34,"items_with_par":2},{"name":"Rum","count":19,"avg_cost":26.82,"total_value":892.7,"items_with_par":5},{"name":"Soda and Juice","count":18,"avg_cost":5.05,"total_value":303.99,"items_with_par":8},{"name":"Red Wine","count":17,"avg_cost":19.05,"total_value":416.78,"items_with_par":7}],"cat_costs":[{"name":"Beer Keg","avg_cost":139.04,"count":220},{"name":"Bourbon","avg_cost":65.51,"count":26},{"name":"Cider","avg_cost":59.44,"count":6},{"name":"Unknown","avg_cost":57.89,"count":73},{"name":"Tequila","avg_cost":44.64,"count":53},{"name":"Scotch and Whisky","avg_cost":42.36,"count":56},{"name":"Gin","avg_cost":37.26,"count":19},{"name":"Aperitif","avg_cost":29.81,"count":3},{"name":"Rum","avg_cost":26.82,"count":19},{"name":"Liqueur and Cream","avg_cost":22.01,"count":38},{"name":"Vodka","avg_cost":19.83,"count":30},{"name":"Red Wine","avg_cost":19.05,"count":17},{"name":"Rosé Wine","avg_cost":13.23,"count":3},{"name":"Cordials","avg_cost":11.92,"count":6},{"name":"Syrup","avg_cost":10.18,"count":22},{"name":"White Wine","avg_cost":9.99,"count":17},{"name":"Miscellaneous Stock","avg_cost":8.85,"count":4},{"name":"Non-Alcoholic Premix","avg_cost":5.97,"count":8},{"name":"Soda and Juice","avg_cost":5.05,"count":18},{"name":"Beer Can","avg_cost":4.82,"count":65},{"name":"Coolers and Pre-Mixed Drinks","avg_cost":4.34,"count":30},{"name":"Beer Bottle","avg_cost":3.48,"count":44},{"name":"Seltzer","avg_cost":2.21,"count":7},{"name":"Bev, n.a.","avg_cost":2.04,"count":5},{"name":"Water","avg_cost":1.68,"count":5}],"under_par":[{"name":"Mr. Boston, Peach Schnapps","cat":"Liqueur and Cream","stock":14.9,"par":50.0,"gap":35.1},{"name":"Bottle Labatt Blue","cat":"Beer Bottle","stock":10.0,"par":24.0,"gap":14.0},{"name":"Barton's, Triple Sec","cat":"Liqueur and Cream","stock":-7.89,"par":6.0,"gap":13.89},{"name":"Sysco Lime Juice","cat":"Soda and Juice","stock":-7.73,"par":6.0,"gap":13.73},{"name":"Fever Tree Sparkling Pink Grapefruit 6/4","cat":"Soda and Juice","stock":-5.77,"par":6.0,"gap":11.77},{"name":"Grolsch Lager","cat":"Beer Bottle","stock":2.0,"par":12.0,"gap":10.0},{"name":"Modelo Especial 4/6 12 oz Bottle","cat":"Beer Bottle","stock":2.0,"par":12.0,"gap":10.0},{"name":"Sysco Lemon Juice","cat":"Soda and Juice","stock":-3.23,"par":6.0,"gap":9.23},{"name":"Absolut Raspberri","cat":"Vodka","stock":1.38,"par":10.0,"gap":8.62},{"name":"Filthy Foods, Black Cherry","cat":"Coolers and Pre-Mixed Drinks","stock":-7.15,"par":1.0,"gap":8.15},{"name":"Mom Water Blackberry Lime Kathy","cat":"Beer Can","stock":2.0,"par":10.0,"gap":8.0},{"name":"Athletic Free Wave N/A Beer","cat":"Beer Can","stock":6.0,"par":12.0,"gap":6.0},{"name":"Sweetwater Dive Beer","cat":"Beer Can","stock":7.0,"par":12.0,"gap":5.0},{"name":"Jose Cuervo Tradicional Reposado","cat":"Tequila","stock":0.2,"par":3.0,"gap":2.8},{"name":"Four roses bourbon","cat":"Bourbon","stock":0.42,"par":3.0,"gap":2.58},{"name":"Dekuyper Razzmatazz","cat":"Cordials","stock":0.5,"par":3.0,"gap":2.5},{"name":"Boodles British Gin","cat":"Gin","stock":-0.06,"par":2.0,"gap":2.06},{"name":"Angry Orchard Crisp Apple Cider","cat":"Beer Keg","stock":0.29,"par":2.0,"gap":1.71},{"name":"Guiness Keg","cat":"Beer Keg","stock":0.39,"par":2.0,"gap":1.61},{"name":"Miller Lite","cat":"Beer Keg","stock":0.53,"par":2.0,"gap":1.47},{"name":"Founder Solid Gold","cat":"Beer Keg","stock":0.58,"par":2.0,"gap":1.42},{"name":"Orange Juice","cat":"Soda and Juice","stock":-0.42,"par":1.0,"gap":1.42},{"name":"Skrewball Peanut Butter Whiskey","cat":"Scotch and Whisky","stock":1.85,"par":3.0,"gap":1.15},{"name":"15 Cabernet Sauvignon Freakshow (Michael","cat":"Red Wine","stock":0.93,"par":2.0,"gap":1.07},{"name":"Watermelon Real","cat":"Non-Alcoholic Premix","stock":1.0,"par":2.0,"gap":1.0}],"over_par":[{"name":"Michelob Ultra","cat":"Beer Bottle","stock":193.93,"par":24.0,"excess":169.93},{"name":"Corona Extra 4/6 12 oz Bottle","cat":"Beer Bottle","stock":120.0,"par":12.0,"excess":108.0},{"name":"Bud Light","cat":"Beer Bottle","stock":112.0,"par":24.0,"excess":88.0},{"name":"Corona Light 4/6 12 oz Bottle","cat":"Beer Bottle","stock":84.0,"par":12.0,"excess":72.0},{"name":"Senorita Mango, Mexican Agave & Lime THC","cat":"Bev, n.a.","stock":49.0,"par":4.0,"excess":45.0},{"name":"Surfside Black Cherry Lemonade","cat":"Coolers and Pre-Mixed Drinks","stock":45.0,"par":8.0,"excess":37.0},{"name":"Angry Orchard Crisp Apple Cider Bottle","cat":"Beer Bottle","stock":48.0,"par":12.0,"excess":36.0},{"name":"Heineken","cat":"Beer Bottle","stock":45.0,"par":12.0,"excess":33.0},{"name":"Surfside Strawberry Lemonade 6/4P","cat":"Coolers and Pre-Mixed Drinks","stock":40.0,"par":8.0,"excess":32.0},{"name":"Jameson - Irish Whiskey","cat":"Scotch and Whisky","stock":28.16,"par":3.0,"excess":25.16},{"name":"Michelob Ultra Zero","cat":"Beer Bottle","stock":31.0,"par":6.0,"excess":25.0},{"name":"Stone Delicious Double IPA","cat":"Beer Can","stock":27.0,"par":3.0,"excess":24.0},{"name":"Bottle Dos Equis","cat":"Beer Bottle","stock":34.0,"par":12.0,"excess":22.0},{"name":"Bottle Budweiser Zero","cat":"Beer Can","stock":27.0,"par":6.0,"excess":21.0},{"name":"Athletic Brewing Upside Dawn Golden Ale","cat":"Beer Can","stock":32.0,"par":12.0,"excess":20.0}],"high_value":[{"name":"Jameson - Irish Whiskey","cat":"Scotch and Whisky","stock":28.16,"cost":27.59,"value":776.93},{"name":"Michelob Ultra 1/2 BBL","cat":"Beer Keg","stock":3.64,"cost":158.0,"value":575.12},{"name":"Campari, Milano Liqueur","cat":"Liqueur and Cream","stock":16.67,"cost":32.3,"value":538.44},{"name":"Buffalo Trace Kentucky Bourbon","cat":"Bourbon","stock":19.9,"cost":25.28,"value":503.07},{"name":"Tito's Handmade Vodka","cat":"Vodka","stock":24.88,"cost":18.72,"value":465.75},{"name":"Fireball Cinnamon Whisky 1/12 1 ltr Bott","cat":"Scotch and Whisky","stock":21.73,"cost":20.78,"value":451.55},{"name":"Parish Ghost in the machine 1/2BBL","cat":"Beer Keg","stock":1.37,"cost":325.0,"value":445.25},{"name":"Jack Daniel's","cat":"Scotch and Whisky","stock":11.94,"cost":35.38,"value":422.44},{"name":"CCBC Tropicalia IPA 15.5G","cat":"Beer Keg","stock":2.13,"cost":193.99,"value":413.2},{"name":"Lunazul Blanco","cat":"Tequila","stock":16.43,"cost":24.28,"value":398.92},{"name":"6B Sour Continuum Peach Mango Sour Ale","cat":"Unknown","stock":2.0,"cost":192.99,"value":385.98},{"name":"Bitburger Pilsner Keg","cat":"Beer Keg","stock":2.0,"cost":188.0,"value":376.0},{"name":"Bell's Two Hearted IPA","cat":"Beer Keg","stock":1.87,"cost":189.0,"value":353.43},{"name":"CASAMIGOS REPOSADO 1.0L","cat":"Tequila","stock":4.3,"cost":79.98,"value":343.91},{"name":"Silver Gate Sparkling Brut 1/6 BBL","cat":"Beer Keg","stock":2.8,"cost":115.71,"value":323.99},{"name":"Teremana Reposado","cat":"Tequila","stock":8.09,"cost":38.78,"value":313.73},{"name":"Woodford Reserve - Kentucky Bourbon","cat":"Bourbon","stock":6.69,"cost":44.17,"value":295.5},{"name":"Johnnie Walker Black","cat":"Scotch and Whisky","stock":6.68,"cost":43.55,"value":290.91},{"name":"Kahlua","cat":"Liqueur and Cream","stock":8.17,"cost":35.53,"value":290.28},{"name":"Michelob Ultra (bottle)","cat":"Beer Bottle","stock":193.93,"cost":1.47,"value":285.08}]};
-
-(function(){
-  // Avg cost by category - horizontal bar
-  const ccCtx = document.getElementById('c-inv-catcost');
-  if (ccCtx) {
-    const top = IV.cat_costs.slice(0, 15);
-    new Chart(ccCtx, {
-      type: 'bar',
-      data: {
-        labels: top.map(c => c.name),
-        datasets: [{ data: top.map(c => c.avg_cost), backgroundColor: top.map((_,i) => i===0?AL:i<3?A:i<7?'rgba(232,160,32,.55)':'rgba(232,160,32,.3)'), borderRadius: 2, borderSkipped: false }]
-      },
-      options: {
-        indexAxis: 'y', responsive: true,
-        plugins: { legend:{display:false}, tooltip:{...tip, callbacks:{label:c=>' $'+c.parsed.x.toFixed(2)+' avg'}} },
-        scales: {
-          x: { grid:{color:'rgba(46,40,32,.5)'}, ticks:{color:'#8a7d6a', callback:v=>'$'+v} },
-          y: { grid:{display:false}, ticks:{color:'#c8b898', font:{size:11}} }
-        }
-      }
-    });
-  }
-
-  // Inventory value by category
-  const cvCtx = document.getElementById('c-inv-catval');
-  if (cvCtx) {
-    const cats = IV.cat_summary.filter(c => c.total_value > 0).sort((a,b) => b.total_value - a.total_value).slice(0,12);
-    new Chart(cvCtx, {
-      type: 'bar',
-      data: {
-        labels: cats.map(c => c.name),
-        datasets: [{ data: cats.map(c => c.total_value), backgroundColor: cats.map((_,i) => i===0?AL:i<3?A:i<6?'rgba(232,160,32,.55)':'rgba(232,160,32,.3)'), borderRadius: 2, borderSkipped: false }]
-      },
-      options: {
-        indexAxis: 'y', responsive: true,
-        plugins: { legend:{display:false}, tooltip:{...tip, callbacks:{label:c=>' $'+Math.round(c.parsed.x).toLocaleString()}} },
-        scales: {
-          x: { grid:{color:'rgba(46,40,32,.5)'}, ticks:{color:'#8a7d6a', callback:v=>'$'+Math.round(v/1000)+'K'} },
-          y: { grid:{display:false}, ticks:{color:'#c8b898', font:{size:11}} }
-        }
-      }
-    });
-  }
-
-  // Under par table
-  buildTable(document.getElementById('t-under-par'), IV.under_par, [
-    {key:'name', label:'Item'},
-    {key:'cat', label:'Category', fmt:v=>`<span class="badge amber">${v}</span>`},
-    {key:'stock', label:'Stock', cls:'r', fmt:v=>`<span class="mono" style="color:${v<0?'var(--red)':'var(--cream)'}">${v.toFixed(1)}</span>`},
-    {key:'par', label:'Par', cls:'r', fmt:v=>`<span class="mono">${v.toFixed(1)}</span>`},
-    {key:'gap', label:'Gap', cls:'r', fmt:v=>`<span class="mono" style="color:var(--red)">-${v.toFixed(1)}</span>`},
-  ]);
-
-  // Over par table
-  buildTable(document.getElementById('t-over-par'), IV.over_par, [
-    {key:'name', label:'Item'},
-    {key:'cat', label:'Category', fmt:v=>`<span class="badge green">${v}</span>`},
-    {key:'stock', label:'Stock', cls:'r', fmt:v=>`<span class="mono">${v.toFixed(0)}</span>`},
-    {key:'par', label:'Par', cls:'r', fmt:v=>`<span class="mono">${v.toFixed(0)}</span>`},
-    {key:'excess', label:'Excess', cls:'r', fmt:v=>`<span class="mono" style="color:var(--green)">+${v.toFixed(0)}</span>`},
-  ]);
-
-  // High value table
-  const maxVal = IV.high_value[0].value;
-  buildTable(document.getElementById('t-high-val'), IV.high_value, [
-    {key:'_rank', label:'#', fmt:(v,r,i)=>`<span class="rnk ${i<3?'hi':''}">${v}</span>`},
-    {key:'name', label:'Item'},
-    {key:'cat', label:'Category', fmt:v=>`<span class="badge amber">${v}</span>`},
-    {key:'stock', label:'On Hand', cls:'r', fmt:v=>`<span class="mono">${v.toFixed(1)}</span>`},
-    {key:'cost', label:'Cost/Unit', cls:'r', fmt:v=>`<span class="mono">$${v.toFixed(2)}</span>`},
-    {key:'value', label:'Total Value', cls:'r', fmt:v=>`<span class="mono">$${v.toFixed(2)}</span>`},
-    {key:'value', label:'Share', fmt:v=>{
-      const w = Math.round((v/maxVal)*100);
-      return `<div class="mini"><div class="mini-bg"><div class="mini-fill" style="width:${w}%"></div></div><span class="mini-pct">$${Math.round(v)}</span></div>`;
-    }},
-  ]);
-})();
-
-// ── Tab switching ─────────────────────────────────────────
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', function() {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+function showTab(id) {
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    this.classList.add('active');
-    document.getElementById(this.dataset.tab).classList.add('active');
-  });
-});
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    event.currentTarget.classList.add('active');
+}
+
+function exportCSV(tableId, filename) {
+    let csv = [];
+    const rows = document.querySelectorAll(`#${tableId} tr`);
+    rows.forEach(row => {
+        const cols = row.querySelectorAll('td, th');
+        const data = Array.from(cols).map(c => `"${c.innerText}"`).join(',');
+        csv.push(data);
+    });
+    const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+}
+
+loadData();
 </script>
 </body>
 </html>
